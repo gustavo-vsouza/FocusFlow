@@ -1,32 +1,33 @@
 <!DOCTYPE html>
-<!-- (MODIFICADO) 'dark' agora é permanente -->
 <html lang="pt-BR" class="dark">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FocoFlow - Seu Hub de Produtividade</title>
+    <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Bibliotecas externas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- Fonte Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
-        /* Estilos base para a aplicação */
+        /* Estilos de base */
         body {
             font-family: 'Inter', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
 
-            /* (MODIFICADO) Fundo com gradiente sutil (Modo Escuro) */
+            /* Fundo com gradiente sutil no Dark Mode */
             background-color: #0d131f;
-            /* gray-950 */
             background-image: radial-gradient(circle at 1% 1%, #0c4a6e, #0d131f 90%);
         }
 
-        /* Gradiente da marca */
+        /* Gradiente de destaque */
         .brand-gradient {
             background-image: linear-gradient(to right, #2563EB, #3B82F6);
             transition: all 0.3s ease-in-out;
@@ -43,29 +44,35 @@
             -webkit-text-fill-color: transparent;
         }
 
-        /* (MODIFICADO) Estilo "Glassmorphism" para painéis */
+        /* Estilo para painéis */
         .panel {
             background-color: rgba(31, 41, 55, 0.8);
-            /* gray-800/80 */
             border: 1px solid rgba(55, 65, 81, 0.7);
-            /* gray-700/70 */
         }
 
-        /* (MODIFICADO) Card de Tarefa */
+        /* Card de Tarefa */
         .task-card {
             transition: all 0.2s ease-in-out;
             border: 1px solid rgba(55, 65, 81, 0.7);
-            /* gray-700/70 */
             background-color: rgba(31, 41, 55, 0.9);
-            /* gray-800/90 */
+            /* Importante para o FAB: Adiciona um z-index para que o card selecionado fique por cima */
+            z-index: 10;
         }
 
         .task-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
         }
+        
+        /* Adiciona um destaque quando o card está selecionado (usado pelo FAB) */
+        .task-card.selected {
+             box-shadow: 0 0 0 2px #3B82F6;
+             border-color: #3B82F6;
+             background-color: rgba(40, 50, 65, 0.9);
+             opacity: 1;
+        }
 
-        /* (MODIFICADO) Estilos para Drag and Drop */
+        /* Estilos para Drag and Drop */
         .drag-handle {
             cursor: move;
         }
@@ -73,17 +80,15 @@
         .sortable-ghost {
             opacity: 0.4;
             background-color: #1e3a8a;
-            /* Estilo escuro */
         }
 
         .sortable-chosen {
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             transform: scale(1.02);
             background-color: #1f2937;
-            /* Estilo escuro (gray-800) */
         }
 
-        /* Oculta ícone de calendário padrão */
+        /* Esconde o ícone de calendário padrão do input[type="date"] */
         .due-date-input::-webkit-calendar-picker-indicator {
             display: none;
             -webkit-appearance: none;
@@ -122,7 +127,7 @@
             animation: toast-out 0.3s ease-in forwards;
         }
 
-        /* (MODIFICADO) Estilização do Checkbox */
+        /* Estilização do Checkbox */
         .custom-checkbox-container {
             -webkit-user-select: none;
             -moz-user-select: none;
@@ -186,12 +191,10 @@
             transform: scale(1.1);
         }
 
-        /* (NOVO) Classe genérica para ícones SVG */
+        /* Classe genérica para ícones SVG */
         .svg-icon {
             width: 1.25rem;
-            /* 20px (w-5) */
             height: 1.25rem;
-            /* 20px (h-5) */
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
@@ -201,9 +204,7 @@
 
         .svg-icon-sm {
             width: 1rem;
-            /* 16px (w-4) */
             height: 1rem;
-            /* 16px (h-4) */
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
@@ -213,21 +214,36 @@
 
         .svg-icon-lg {
             width: 1.75rem;
-            /* 28px (w-7) */
             height: 1.75rem;
-            /* 28px (h-7) */
             stroke: currentColor;
             stroke-width: 2;
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
         }
+        
+        /* Estilos do FAB Menu */
+        .fab-menu {
+            transition: all 0.2s ease-in-out;
+            transform: scale(0);
+            transform-origin: bottom right;
+        }
+
+        .fab-open .fab-menu {
+            transform: scale(1);
+        }
+
+        .fab-item {
+            transition: all 0.15s ease-in-out;
+        }
+
+        .fab-item:hover {
+            box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
+            filter: brightness(1.1);
+            transform: scale(1.05);
+        }
     </style>
-
-    <!-- (REMOVIDO) Bloco tailwind.config obsoleto -->
 </head>
-
-<!-- (MODIFICADO) Classes de body simplificadas para dark mode -->
 
 <body class="text-gray-100 min-h-screen transition-colors duration-200">
 
@@ -239,45 +255,38 @@
             <!-- Logo e Título -->
             <div class="flex items-center gap-3">
                 <div class="p-2.5 brand-gradient rounded-lg shadow-lg">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="logo-icon-placeholder"></span>
                 </div>
-                <!-- (MODIFICADO) Cor do texto simplificada -->
                 <h1 class="text-3xl font-bold text-white">
                     Foco<span class="brand-gradient-text">Flow</span>
                 </h1>
-                <!-- (MODIFICADO) Cor do texto simplificada -->
                 <span class="text-sm text-gray-400 font-medium">v1.6</span>
             </div>
 
             <!-- Controles do Cabeçalho -->
             <div class="flex items-center gap-2 sm:gap-4">
 
-                <!-- (MODIFICADO) Botão de Importar simplificado -->
+                <!-- Botão de Importar -->
                 <label for="file-import"
                     class="relative cursor-pointer px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
                     title="Importar .xlsx">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="import-icon-placeholder"></span>
                     <input type="file" id="file-import" accept=".xlsx" class="sr-only">
                 </label>
 
-                <!-- (MODIFICADO) Botão de Exportar simplificado -->
+                <!-- Botão de Exportar -->
                 <button id="export-button"
                     class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
                     title="Exportar .xlsx">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="export-icon-placeholder"></span>
                 </button>
 
-                <!-- (MODIFICADO) Botão de Ocultar/Exibir simplificado -->
+                <!-- Botão de Ocultar/Exibir Formulário -->
                 <button id="toggle-form-button"
                     class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
                     title="Ocultar formulário">
                     <!-- O ícone será definido pelo JS -->
                 </button>
-
-                <!-- (REMOVIDO) Seletor de Modo Escuro -->
             </div>
         </header>
 
@@ -286,14 +295,14 @@
             <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Nova Demanda</h2>
 
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                <!-- (MODIFICADO) Input Principal simplificado -->
+                <!-- Input Principal -->
                 <div class="flex-grow">
                     <label for="task-text" class="sr-only">Descrição da Demanda</label>
                     <input type="text" id="task-text" placeholder="Qual é a nova demanda?"
                         class="w-full px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px]">
                 </div>
 
-                <!-- (MODIFICADO) Seletor de Prioridade simplificado -->
+                <!-- Seletor de Prioridade -->
                 <div class="flex-shrink-0">
                     <label for="task-priority" class="sr-only">Prioridade</label>
                     <select id="task-priority"
@@ -304,7 +313,7 @@
                     </select>
                 </div>
 
-                <!-- (MODIFICADO) Seletor de Data simplificado -->
+                <!-- Seletor de Data -->
                 <div class="flex-shrink-0">
                     <label for="task-due-date" class="sr-only">Data de Vencimento</label>
                     <input type="date" id="task-due-date" title="Data de Vencimento"
@@ -314,17 +323,13 @@
 
             <!-- Botões de Adicionar -->
             <div class="flex flex-col sm:flex-row gap-3 mt-4">
-                <!-- (MODIFICADO) Botão Primário simplificado -->
                 <button type="submit" data-list="focus"
                     class="brand-gradient flex-1 flex justify-center items-center gap-2 px-5 py-3 rounded-md text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all h-[50px]">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="focus-add-icon-placeholder"></span>
                     Adicionar ao Foco do Dia
                 </button>
-                <!-- (MODIFICADO) Botão Secundário simplificado -->
                 <button type="submit" data-list="backlog"
                     class="flex-1 flex justify-center items-center gap-2 px-5 py-3 rounded-md bg-gray-700 border border-gray-600 text-white font-semibold shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all h-[50px]">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="backlog-add-icon-placeholder"></span>
                     Salvar no Backlog
                 </button>
@@ -332,18 +337,16 @@
         </form>
 
         <!-- Colunas de Tarefas -->
+        <!-- O layout agora é 1 coluna por padrão (mobile-first), e muda para 2 colunas apenas em telas grandes (lg) -->
         <main class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
             <!-- Coluna: Foco do Dia -->
             <section id="focus-section">
                 <div class="flex justify-between items-center mb-4">
-                    <!-- (MODIFICADO) Cor do texto simplificada -->
                     <h2 class="text-2xl font-bold flex items-center gap-2 text-white">
-                        <!-- (MODIFICADO) Ícone SVG inline -->
                         <span id="focus-title-icon-placeholder"></span>
                         Foco do Dia
                     </h2>
-                    <!-- (MODIFICADO) Cor do ícone simplificada -->
                     <button id="reset-focus-button" class="p-2 text-gray-400 hover:text-blue-400 transition-colors"
                         title="Resetar Tarefas Concluídas do Dia">
                         <!-- Icon: Reset (definido por JS) -->
@@ -356,9 +359,7 @@
 
             <!-- Coluna: Backlog -->
             <section id="backlog-section">
-                <!-- (MODIFICADO) Cor do texto simplificada -->
                 <h2 class="text-2xl font-bold flex items-center gap-2 mb-4 text-white">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="backlog-title-icon-placeholder"></span>
                     Backlog
                 </h2>
@@ -372,18 +373,14 @@
         <!-- Seção: Tarefas Concluídas (do Backlog) -->
         <section id="completed-section" class="mt-8">
             <details class="panel rounded-lg shadow-sm overflow-hidden">
-                <!-- (MODIFICADO) Cores simplificadas -->
                 <summary
                     class="p-4 cursor-pointer flex justify-between items-center text-lg font-semibold text-green-400 hover:bg-gray-700/50 transition-colors">
                     <span class="flex items-center gap-2">
-                        <!-- (MODIFICADO) Ícone SVG inline -->
                         <span id="completed-title-icon-placeholder"></span>
                         Tarefas Concluídas (Backlog)
                     </span>
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="completed-arrow-icon-placeholder" class="transition-transform details-arrow"></span>
                 </summary>
-                <!-- (MODIFICADO) Cor da borda simplificada -->
                 <div id="completed-list" class="p-4 border-t border-gray-700 space-y-3">
                     <!-- Cards Concluídos (do Backlog) serão inseridos aqui -->
                 </div>
@@ -392,12 +389,53 @@
 
     </div> <!-- Fim do Container Principal -->
 
-    <!-- (NOVO) Rodapé com Marca D'água -->
+    <!-- Rodapé com Marca D'água -->
     <footer class="mt-8 py-4 border-t border-gray-700/50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
             <p>Criado por <span class="text-blue-400 font-medium">Gustavo Souza</span></p>
         </div>
     </footer>
+    
+    <!-- FAB Menu de Ações (Móvel) -->
+    <!-- Este botão flutuante só aparece em telas pequenas (lg:hidden) -->
+    <div id="task-fab-container" class="fixed bottom-8 right-8 z-40 lg:hidden hidden">
+        <!-- Botão principal do FAB -->
+        <button id="main-fab-button" data-action="toggle-fab"
+            class="brand-gradient w-14 h-14 rounded-full flex items-center justify-center text-white shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition-transform duration-200 hover:scale-105"
+            title="Ações">
+            <span id="main-fab-icon">
+                <!-- Ícone Menu será inserido aqui pelo JS -->
+            </span>
+        </button>
+
+        <!-- Menu flutuante de ações (escondido por padrão) -->
+        <div id="fab-action-menu" class="absolute bottom-16 right-0 space-y-3 fab-menu hidden">
+            
+            <!-- Item 1: Adicionar Notas -->
+            <button id="fab-open-notes" data-action="open-notes"
+                class="fab-item w-12 h-12 rounded-full flex items-center justify-center bg-gray-800 text-gray-300 shadow-lg border border-gray-700 hover:bg-gray-700 hover:text-white"
+                title="Adicionar Notas">
+                <span id="fab-notes-icon"></span>
+            </button>
+            
+            <!-- Item 2: Mover Tarefa (Foco <-> Backlog) -->
+            <button id="fab-move-task" data-action="move-task"
+                class="fab-item w-12 h-12 rounded-full flex items-center justify-center bg-gray-800 text-gray-300 shadow-lg border border-gray-700 hover:bg-gray-700 hover:text-white"
+                title="Mover Tarefa">
+                <span id="fab-move-icon">
+                    <!-- Ícone de mover será inserido pelo JS -->
+                </span>
+            </button>
+            
+            <!-- Item 3: Excluir Tarefa -->
+            <button id="fab-delete-task" data-action="delete"
+                class="fab-item w-12 h-12 rounded-full flex items-center justify-center bg-gray-800 text-red-400 shadow-lg border border-gray-700 hover:bg-gray-700 hover:text-red-300"
+                title="Excluir Tarefa">
+                <span id="fab-delete-icon"></span>
+            </button>
+        </div>
+    </div>
+
 
     <!-- (Toast) Notificação Global -->
     <div id="toast-notification"
@@ -412,17 +450,15 @@
         <div id="notes-modal-backdrop" class="modal-backdrop fixed inset-0 transition-opacity opacity-0"
             style="display: none;"></div>
 
-        <!-- (MODIFICADO) Conteúdo do Modal simplificado -->
+        <!-- Conteúdo do Modal -->
         <div id="notes-modal-content"
             class="relative z-50 w-full max-w-lg bg-gray-800 rounded-lg shadow-2xl p-6 transition-all transform scale-95 opacity-0"
             style="display: none;">
             <!-- Cabeçalho do Modal -->
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-semibold text-white">Notas da Demanda</h3>
-                <!-- (MODIFICADO) Botão de fechar simplificado -->
                 <button id="notes-modal-close" class="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white"
                     title="Fechar">
-                    <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="modal-close-icon-placeholder"></span>
                 </button>
             </div>
@@ -430,19 +466,15 @@
             <!-- Formulário do Modal -->
             <form id="notes-modal-form">
                 <input type="hidden" id="notes-modal-task-id">
-                <!-- (MODIFICADO) Texto da Tarefa simplificado -->
                 <p class="mb-4 p-3 bg-gray-700 rounded-md text-gray-200" id="notes-modal-task-text"></p>
 
-                <!-- (MODIFICADO) Label simplificado -->
                 <label for="notes-modal-textarea" class="block text-sm font-medium text-gray-400 mb-2">
                     Detalhes e Notas:
                 </label>
-                <!-- (MODIFICADO) Textarea simplificado -->
                 <textarea id="notes-modal-textarea" rows="8"
                     class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Adicione detalhes, links, ou qualquer outra informação aqui..."></textarea>
 
-                <!-- (MODIFICADO) Botão Salvar simplificado -->
                 <div class="mt-6 flex justify-end">
                     <button type="submit"
                         class="brand-gradient px-5 py-2.5 rounded-md text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all">
@@ -455,16 +487,17 @@
 
 
     <script>
-        // --- Constantes da Aplicação ---
+        // --- Constantes e Variáveis Globais ---
         const LOCAL_STORAGE_KEY = 'focoflow-tasks';
         const FORM_VISIBLE_KEY = 'focoflow-form-visible';
         const TODAY_NORM = new Date();
         TODAY_NORM.setHours(0, 0, 0, 0);
 
 
-        // --- Globais da Aplicação ---
         let localTasks = [];
         let toastTimeout = null;
+        let fabOpen = false; // Estado do menu FAB
+        let selectedTaskForFab = null; // Tarefa atualmente selecionada para o FAB
 
         // --- Elementos da DOM ---
         const addTaskForm = document.getElementById('add-task-form');
@@ -474,7 +507,6 @@
         const focusList = document.getElementById('focus-list');
         const backlogList = document.getElementById('backlog-list');
         const completedList = document.getElementById('completed-list');
-        // (REMOVIDO) Elementos do Dark Mode
         const resetFocusButton = document.getElementById('reset-focus-button');
         const exportButton = document.getElementById('export-button');
         const importInput = document.getElementById('file-import');
@@ -491,9 +523,20 @@
         const notesModalTaskId = document.getElementById('notes-modal-task-id');
         const notesModalTaskText = document.getElementById('notes-modal-task-text');
         const notesModalTextarea = document.getElementById('notes-modal-textarea');
+        
+        // Elementos do FAB Menu
+        const fabContainer = document.getElementById('task-fab-container');
+        const mainFabButton = document.getElementById('main-fab-button');
+        const fabActionMenu = document.getElementById('fab-action-menu');
+        const fabMoveTaskButton = document.getElementById('fab-move-task');
+        const fabOpenNotesButton = document.getElementById('fab-open-notes');
+        const fabDeleteTaskButton = document.getElementById('fab-delete-task');
+        const fabNotesIcon = document.getElementById('fab-notes-icon');
+        const fabMainIcon = document.getElementById('main-fab-icon');
+        const fabDeleteIcon = document.getElementById('fab-delete-icon');
 
 
-        // --- (MODIFICADO) Dicionário de Ícones (agora usa SVG Inline) ---
+        // --- Dicionário de Ícones (SVG) ---
         function getIcon(name) {
             const icons = {
                 // Ícones de 20x20 (w-5, h-5)
@@ -511,6 +554,7 @@
                 'fileDown': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6m-3 3 3 3 3-3"/></svg>',
                 'chevronDown': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="m6 9 6 6 6-6"/></svg>',
                 'close': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+                'menu': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="18" y2="18"/></svg>',
 
                 // Ícones de 16x16 (w-4, h-4)
                 'calendar': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
@@ -528,7 +572,8 @@
             return icons[name] || '';
         }
 
-        // --- Funções de Texto e Status ---
+        // --- Funções de Ajuda ---
+
         function getPriorityText(priority) {
             const map = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
             return map[priority] || 'Média';
@@ -555,9 +600,7 @@
             return str.replace(/"/g, '&quot;');
         }
 
-        // --- Funções de Ajuda de UI ---
-
-        /** (MODIFICADO) Retorna classes e ícone para o indicador de data */
+        /** Retorna classes e ícone para o indicador de data */
         function getDueDateIndicator(dueDateString) {
             if (!dueDateString) {
                 return {
@@ -582,7 +625,7 @@
             return { classes: 'text-gray-400', icon: getIcon('calendar') };
         }
 
-        /** (MODIFICADO) Retorna as classes de cor do Tailwind para cada prioridade */
+        /** Retorna as classes de cor do Tailwind para cada prioridade */
         function getPriorityClasses(priority) {
             switch (priority) {
                 case 'alta':
@@ -630,19 +673,27 @@
             }, 3000);
         }
 
-        // --- Renderização ---
+        // --- Funções de Renderização ---
 
         /** Renderiza todas as listas de tarefas */
         function renderTasks() {
             focusList.innerHTML = '';
             backlogList.innerHTML = '';
             completedList.innerHTML = '';
+            
+            // Garantir que o FAB esteja fechado e a seleção limpa ao renderizar
+            selectedTaskForFab = null;
+            updateFabState(null);
+            
+            // Remove o destaque de todos os cards antes de re-renderizar
+            document.querySelectorAll('.task-card').forEach(card => card.classList.remove('selected'));
 
             const focusTasks = localTasks.filter(t => t.list === 'focus' && t.status === 'pending');
             const focusCompletedTasks = localTasks.filter(t => t.list === 'focus' && t.status === 'completed');
             const backlogTasks = localTasks.filter(t => t.list === 'backlog' && t.status === 'pending');
             const backlogCompletedTasks = localTasks.filter(t => t.list === 'backlog' && t.status === 'completed');
 
+            // Coloca as tarefas pendentes por ordem, e as concluídas depois (não ordenadas)
             const sortedFocusTasks = [
                 ...focusTasks.sort((a, b) => (a.order || 0) - (b.order || 0)),
                 ...focusCompletedTasks.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
@@ -673,28 +724,91 @@
             resetFocusButton.innerHTML = getIcon('reset');
             resetFocusButton.disabled = focusCompletedTasks.length === 0;
             resetFocusButton.classList.toggle('opacity-50', focusCompletedTasks.length === 0);
-
-            // (REMOVIDO) Processa os ícones recém-criados
-            // lucide.createIcons();
         }
 
-        /** (MODIFICADO) Cria o HTML para um único card de tarefa */
+        /** Cria o HTML para um único card de tarefa */
         function createTaskCard(task) {
             const { id, text, priority, status, list, dueDate, notes } = task;
 
+            const isCompletedFocus = (status === 'completed' && list === 'focus');
+            
             const card = document.createElement('div');
-            card.className = `task-card flex items-center gap-3 p-3.5 rounded-lg shadow ${status === 'completed' ? 'opacity-60' : ''}`;
+            // Responsividade interna: quebra para mais linhas em mobile (sm:flex-nowrap para voltar no desktop)
+            card.className = `task-card flex flex-wrap sm:flex-nowrap items-center gap-3 p-3.5 rounded-lg shadow ${status === 'completed' ? 'opacity-60' : ''} relative`; 
             card.dataset.task = JSON.stringify(task);
             card.dataset.taskId = id;
 
-            let actionsHtml = '';
+            // Ações de desktop (visíveis apenas em lg:flex)
+            const actionsHtml = `
+                <div class="task-actions flex-shrink-0 hidden lg:flex items-center gap-2 text-gray-400">
+                    ${createDesktopActions(task)}
+                </div>
+            `;
+            
+            // FAB Button para Mobile (visível apenas em telas pequenas)
+            // Se for concluída do foco, não tem ações além de ver notas, então não precisa do FAB
+            const isFabNeeded = (status !== 'completed' || list === 'backlog');
+            const fabButtonHtml = isFabNeeded ? `
+                <button class="lg:hidden flex-shrink-0 p-1 rounded-md text-gray-400 hover:text-gray-200 task-action-btn" data-action="open-fab" title="Mais Ações">
+                    ${getIcon('menu')}
+                </button>
+            ` : `<span class="lg:hidden flex-shrink-0 w-7"></span>`;
+
+            // Drag handle só para tarefas pendentes
+            const dragHandleHtml = (status === 'pending' && list !== 'completed') ?
+                `<span class="drag-handle flex-shrink-0 p-1 text-gray-500 hover:text-gray-200">
+                    ${getIcon('dragHandle')}
+                </span>` :
+                `<span class="flex-shrink-0 w-7"></span>`;
+
+            const priorityClasses = getPriorityClasses(priority);
+            
+            card.innerHTML = `
+                ${dragHandleHtml}
+                <label class="custom-checkbox-container flex-shrink-0 relative flex items-center justify-center h-5 w-5 cursor-pointer" title="${status === 'completed' ? 'Marcar como pendente' : 'Concluir tarefa'}">
+                    <input type="checkbox" data-action="toggle-status" class="custom-checkbox-input absolute opacity-0 w-0 h-0" ${status === 'completed' ? 'checked' : ''}>
+                    <span class="custom-checkbox-visual w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-md transition-all duration-200"></span>
+                </label>
+                
+                <div class="flex-grow min-w-0 w-full sm:w-auto">
+                    <span class="task-text-display block w-full truncate cursor-pointer text-gray-100 ${isCompletedFocus ? 'line-through' : ''}">${escapeAttr(text)}</span>
+                    <input type="text" class="task-edit-input hidden w-full px-2 py-1 rounded bg-gray-700 border border-blue-500 focus:outline-none" value="${escapeAttr(text)}">
+                </div>
+                
+                <!-- Responsividade: ordem 1 em mobile (muda para a linha de baixo) -->
+                <div class="due-date-container flex-shrink-0 order-1 sm:order-none w-[120px] sm:w-auto flex justify-start sm:justify-end">
+                    ${createDueDateInput(dueDate)}
+                </div>
+
+                <!-- Responsividade: ordem 2 em mobile (muda para a linha de baixo) -->
+                <span class="flex-shrink-0 order-2 sm:order-none text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${priorityClasses.badge}">
+                    <span class="h-2 w-2 rounded-full ${priorityClasses.dot}"></span>
+                    <span>${getPriorityText(priority)}</span>
+                </span>
+                
+                ${actionsHtml}
+                ${fabButtonHtml}
+            `;
+
+            // Aplica estilos de botões para desktop
+            card.querySelectorAll('.task-actions .task-action-btn').forEach(btn => {
+                btn.classList.add('p-1', 'rounded-md', 'hover:text-gray-200');
+            });
+
+            return card;
+        }
+        
+        /** Cria o HTML para as ações de desktop */
+        function createDesktopActions(task) {
+            const { list, status, notes } = task;
+            let html = '';
             const notesIcon = (notes && notes.trim() !== "") ? getIcon('notesFilled') : getIcon('notes');
             const notesTitle = (notes && notes.trim() !== "") ? 'Ver/Editar Notas' : 'Adicionar Notas';
             const notesIconClass = (notes && notes.trim() !== "") ? 'text-blue-400' : '';
 
             if (status === 'pending') {
                 const moveAction = (list === 'focus') ? 'moveToBacklog' : 'moveToFocus';
-                actionsHtml = `
+                html = `
                     <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
                         <span class="${notesIconClass}">${notesIcon}</span>
                     </button>
@@ -706,7 +820,7 @@
                     </button>
                 `;
             } else if (list === 'backlog') {
-                actionsHtml = `
+                html = `
                      <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
                         <span class="${notesIconClass}">${notesIcon}</span>
                     </button>
@@ -717,56 +831,17 @@
                         ${getIcon('delete')}
                     </button>
                 `;
-            } else {
-                actionsHtml = `
+            } else { // completed focus tasks
+                html = `
                     <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
                         <span class="${notesIconClass}">${notesIcon}</span>
                     </button>
                 `;
             }
-
-            const dragHandleHtml = (status === 'pending') ?
-                `<span class="drag-handle flex-shrink-0 p-1 text-gray-500 hover:text-gray-200">
-                    ${getIcon('dragHandle')}
-                </span>` :
-                `<span class="flex-shrink-0 w-7"></span>`;
-
-            const priorityClasses = getPriorityClasses(priority);
-
-            card.innerHTML = `
-                ${dragHandleHtml}
-                <label class="custom-checkbox-container flex-shrink-0 relative flex items-center justify-center h-5 w-5 cursor-pointer" title="${status === 'completed' ? 'Marcar como pendente' : 'Concluir tarefa'}">
-                    <input type="checkbox" data-action="toggle-status" class="custom-checkbox-input absolute opacity-0 w-0 h-0" ${status === 'completed' ? 'checked' : ''}>
-                    <span class="custom-checkbox-visual w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-md transition-all duration-200"></span>
-                </label>
-                
-                <div class="flex-grow min-w-0">
-                    <span class="task-text-display block w-full truncate cursor-pointer text-gray-100 ${status === 'completed' && list === 'focus' ? 'line-through' : ''}">${escapeAttr(text)}</span>
-                    <input type="text" class="task-edit-input hidden w-full px-2 py-1 rounded bg-gray-700 border border-blue-500 focus:outline-none" value="${escapeAttr(text)}">
-                </div>
-                
-                <div class="due-date-container flex-shrink-0 w-[120px] flex justify-end">
-                    ${createDueDateInput(dueDate)}
-                </div>
-
-                <span class="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${priorityClasses.badge}">
-                    <span class="h-2 w-2 rounded-full ${priorityClasses.dot}"></span>
-                    <span>${getPriorityText(priority)}</span>
-                </span>
-
-                <div class="task-actions flex-shrink-0 flex items-center gap-2 text-gray-400">
-                    ${actionsHtml}
-                </div>
-            `;
-
-            card.querySelectorAll('.task-action-btn').forEach(btn => {
-                btn.classList.add('p-1', 'rounded-md', 'hover:text-gray-200');
-            });
-
-            return card;
+            return html;
         }
 
-        /** (MODIFICADO) Helper para criar o input de data ou o botão de adicionar data */
+        /** Helper para criar o input de data ou o botão de adicionar data */
         function createDueDateInput(dueDateString) {
             if (dueDateString) {
                 const { classes, icon } = getDueDateIndicator(dueDateString);
@@ -854,6 +929,7 @@
             taskTextInput.value = '';
             taskPriorityInput.value = 'media';
             taskDueDateInput.value = '';
+            showToast(`Tarefa adicionada ao ${listType === 'focus' ? 'Foco do Dia' : 'Backlog'}!`, "success");
         }
 
         function updateTask(id, updates) {
@@ -911,9 +987,6 @@
             notesModalContent.classList.add('scale-100', 'opacity-100');
 
             notesModalTextarea.focus();
-
-            // (REMOVIDO) Processa o ícone 'X' do modal
-            // lucide.createIcons();
         }
 
         function closeNotesModal() {
@@ -942,52 +1015,250 @@
             }
             closeNotesModal();
         }
+        
+        // --- Funções do FAB Menu ---
+        
+        /** Atualiza a visibilidade e os ícones do FAB com base na tarefa selecionada */
+        function updateFabState(task) {
+            // Limpa o estado anterior
+            document.querySelectorAll('.task-card').forEach(card => card.classList.remove('selected'));
+            fabActionMenu.classList.add('hidden');
+            fabOpen = false;
+
+            if (!task) {
+                fabContainer.classList.add('hidden');
+                return;
+            }
+
+            fabContainer.classList.remove('hidden');
+            selectedTaskForFab = task;
+            
+            // Destaca o card selecionado
+            const cardElement = document.querySelector(`[data-task-id="${task.id}"]`);
+            if (cardElement) {
+                cardElement.classList.add('selected');
+            }
+
+            // 1. Botão Mover/Reabrir (Principal ou Secundário)
+            const isFocus = task.list === 'focus';
+            const isBacklogCompleted = (task.status === 'completed' && task.list === 'backlog');
+            
+            if (isBacklogCompleted) {
+                // Se é concluída do backlog, o botão principal vira Reabrir
+                mainFabButton.classList.remove('brand-gradient');
+                mainFabButton.classList.add('bg-green-600', 'hover:bg-green-500');
+                fabMainIcon.innerHTML = getIcon('reopen');
+                mainFabButton.title = 'Reabrir Tarefa';
+                mainFabButton.dataset.action = 'reopen';
+                
+                fabMoveTaskButton.classList.add('hidden'); // Esconde o botão de mover no menu secundário
+            } else {
+                // Se é pendente ou concluída do foco, o botão principal é o toggle do menu
+                mainFabButton.classList.remove('bg-green-600');
+                mainFabButton.classList.add('brand-gradient');
+                mainFabButton.title = fabOpen ? 'Fechar Ações' : 'Ações';
+                mainFabButton.dataset.action = 'toggle-fab';
+                fabMainIcon.innerHTML = fabOpen ? getIcon('close') : getIcon('menu');
+                
+                // Botão Mover no menu secundário
+                fabMoveTaskButton.classList.remove('hidden');
+                fabMoveTaskButton.title = isFocus ? 'Mover para Backlog' : 'Mover para Foco';
+                fabMoveTaskButton.dataset.action = isFocus ? 'moveToBacklog' : 'moveToFocus';
+                document.getElementById('fab-move-icon').innerHTML = getIcon(isFocus ? 'moveToBacklog' : 'moveToFocus');
+                
+                // Esconde o FAB de mover se a tarefa for concluída do foco (pois ela é resetada pelo botão geral)
+                if (task.status === 'completed' && task.list === 'focus') {
+                    fabMoveTaskButton.classList.add('hidden');
+                }
+            }
+            
+            // 2. Botão Deletar (Visível para todas, exceto concluídas do foco)
+            fabDeleteTaskButton.classList.toggle('hidden', task.status === 'completed' && task.list === 'focus');
+            fabDeleteIcon.innerHTML = getIcon('delete');
+            
+            // 3. Botão Notas
+            const hasNotes = task.notes && task.notes.trim() !== "";
+            fabOpenNotesButton.title = hasNotes ? 'Ver/Editar Notas' : 'Adicionar Notas';
+            fabNotesIcon.innerHTML = hasNotes ? getIcon('notesFilled') : getIcon('notes');
+            fabNotesIcon.classList.toggle('text-blue-400', hasNotes);
+            
+            if (fabOpen) {
+                fabActionMenu.classList.remove('hidden');
+                fabActionMenu.classList.add('fab-open');
+            }
+        }
+        
+        /** Alterna a abertura do menu de ações FAB */
+        function toggleFabMenu() {
+            // Se for o botão reabrir, ele executa a ação e fecha (tratado em handleFabClick)
+            if (mainFabButton.dataset.action === 'reopen') return;
+            
+            fabOpen = !fabOpen;
+            
+            if (fabOpen) {
+                 fabActionMenu.classList.remove('hidden');
+                 setTimeout(() => fabActionMenu.classList.add('fab-open'), 10); // Pequeno delay para a animação
+            } else {
+                 fabActionMenu.classList.remove('fab-open');
+                 // Adiciona um pequeno delay para a transição
+                 setTimeout(() => fabActionMenu.classList.add('hidden'), 200);
+            }
+            
+            updateFabState(selectedTaskForFab);
+        }
+        
+        /** Limpa a seleção do FAB e fecha o menu */
+        function clearFabSelection() {
+            selectedTaskForFab = null;
+            fabOpen = false;
+            updateFabState(null);
+        }
+
+        /** Executa a ação do FAB (botões secundários) */
+        function handleFabAction(e) {
+            if (!selectedTaskForFab) return;
+
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const action = button.dataset.action;
+            const task = selectedTaskForFab;
+            
+            // Se for o botão principal (que pode ser toggle ou reopen)
+            if (button.id === 'main-fab-button') {
+                if (action === 'toggle-fab') {
+                    toggleFabMenu();
+                    return;
+                }
+                // Se for 'reopen' (só ocorre em tarefas concluídas do backlog)
+                if (action === 'reopen') {
+                    updateTask(task.id, { status: 'pending', list: 'backlog', order: Date.now() }); 
+                    showToast("Tarefa reaberta no Backlog!", "success");
+                    clearFabSelection();
+                    return;
+                }
+            }
+            
+            // Ações dos botões secundários
+            toggleFabMenu(); // Fecha o menu após a ação, a menos que seja notas
+
+            switch (action) {
+                case 'moveToFocus':
+                    updateTask(task.id, { list: 'focus', order: Date.now() });
+                    showToast("Tarefa movida para Foco!", "success");
+                    break;
+                case 'moveToBacklog':
+                    updateTask(task.id, { list: 'backlog', order: Date.now() });
+                    showToast("Tarefa movida para Backlog!", "success");
+                    break;
+                case 'open-notes':
+                    openNotesModal(task);
+                    break;
+                case 'delete':
+                    deleteTask(task.id);
+                    showToast("Tarefa excluída!", "success");
+                    break;
+            }
+            
+            // Limpa a seleção após a ação, exceto se for notas (o modal de notas tem sua própria lógica)
+            if (action !== 'open-notes') {
+                clearFabSelection();
+            }
+        }
 
 
         // --- Manipuladores de Eventos (Clicks, Edição) ---
 
         function handleListClick(e) {
             const clickableElement = e.target.closest('button, input[type="checkbox"]');
+            const card = e.target.closest('.task-card');
 
+            // Ignora se estiver arrastando
             if (e.target.closest('.drag-handle')) {
                 return;
             }
-
-            if (!clickableElement) return;
-
-            const card = e.target.closest('.task-card');
-            if (!card) return;
+            
+            // Se o clique não foi em um card ou em um elemento clicável dentro
+            if (!card) {
+                 clearFabSelection(); // Fecha o FAB se clicou fora de um card
+                 return;
+            }
 
             const task = JSON.parse(card.dataset.task);
-            const action = clickableElement.dataset.action;
 
-            switch (action) {
-                case 'toggle-status':
+            if (clickableElement) {
+                const action = clickableElement.dataset.action;
+                
+                // Ação de concluir/desmarcar
+                if (action === 'toggle-status') {
                     const newStatus = clickableElement.checked ? 'completed' : 'pending';
                     updateTask(task.id, { status: newStatus });
-                    break;
-                case 'moveToFocus':
-                    updateTask(task.id, { list: 'focus', order: Date.now() });
-                    break;
-                case 'moveToBacklog':
-                    updateTask(task.id, { list: 'backlog', order: Date.now() });
-                    break;
-                case 'reopen':
-                    updateTask(task.id, { status: 'pending', order: Date.now() });
-                    break;
-                case 'add-due-date':
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    updateTask(task.id, { dueDate: todayStr });
-                    break;
-                case 'open-notes':
-                    openNotesModal(task);
-                    break;
-                case 'delete':
-                    console.warn(`Excluindo tarefa: ${task.text}`);
-                    deleteTask(task.id);
-                    break;
+                    clearFabSelection(); 
+                    return; 
+                }
+                
+                // Ação de abrir FAB (apenas para mobile)
+                if (action === 'open-fab') {
+                    // Se o FAB já estiver aberto para essa tarefa, fecha. Senão, abre.
+                    if (selectedTaskForFab && selectedTaskForFab.id === task.id && fabOpen) {
+                        clearFabSelection();
+                    } else {
+                        selectedTaskForFab = task;
+                        updateFabState(task);
+                        toggleFabMenu();
+                    }
+                    e.stopPropagation(); 
+                    return;
+                }
+                
+                // Ações de Desktop (Mover/Notas/Excluir/Reabrir)
+                if (e.target.closest('.task-actions')) {
+                    if (action === 'moveToFocus') {
+                        updateTask(task.id, { list: 'focus', order: Date.now() });
+                    } else if (action === 'moveToBacklog') {
+                        updateTask(task.id, { list: 'backlog', order: Date.now() });
+                    } else if (action === 'reopen') {
+                        updateTask(task.id, { status: 'pending', order: Date.now() });
+                    } else if (action === 'add-due-date') {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        updateTask(task.id, { dueDate: todayStr });
+                    } else if (action === 'open-notes') {
+                        openNotesModal(task);
+                    } else if (action === 'delete') {
+                        deleteTask(task.id);
+                    }
+                    clearFabSelection();
+                    return;
+                }
+            }
+            
+            // Se o clique foi no corpo do card (que não é um botão/input) e estamos em mobile
+            if (window.innerWidth < 1024) { // Menor que breakpoint lg (mobile)
+                if (task.status !== 'completed' || task.list === 'backlog') {
+                     // Tenta abrir o FAB novamente, se for o mesmo card, deseleciona
+                    if (selectedTaskForFab && selectedTaskForFab.id === task.id && fabOpen) {
+                         clearFabSelection();
+                    } else {
+                        selectedTaskForFab = task;
+                        updateFabState(task);
+                        toggleFabMenu();
+                    }
+                    e.stopPropagation();
+                }
             }
         }
+        
+        function handleGlobalClick(e) {
+            // Se clicou em qualquer lugar que não seja um card de tarefa, ou o próprio FAB/Modal, fecha o FAB
+            const isInsideCard = e.target.closest('.task-card');
+            const isInsideFab = e.target.closest('#task-fab-container');
+            const isInsideModal = e.target.closest('#notes-modal');
+            
+            if (!isInsideCard && !isInsideFab && !isInsideModal) {
+                clearFabSelection();
+            }
+        }
+
 
         function handleListChange(e) {
             const input = e.target;
@@ -1013,11 +1284,15 @@
             const card = textDisplay.closest('.task-card');
             const editInput = card.querySelector('.task-edit-input');
             const task = JSON.parse(card.dataset.task);
-
+            
+            // Apenas permite edição em tarefas pendentes
             if (task.status === 'completed') {
                 return;
             }
 
+            // Garante que o FAB esteja fechado ao iniciar a edição
+            clearFabSelection();
+            
             textDisplay.classList.add('hidden');
             editInput.classList.remove('hidden');
             editInput.focus();
@@ -1149,9 +1424,6 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // --- (REMOVIDO) Funções do Modo Escuro ---
-
-
         // --- Funções de Visibilidade do Formulário ---
         function initFormVisibility() {
             const userPref = localStorage.getItem(FORM_VISIBLE_KEY);
@@ -1164,7 +1436,6 @@
                 toggleFormButton.innerHTML = getIcon('eyeSlash');
                 toggleFormButton.title = 'Ocultar formulário';
             }
-            // (NOVO) Renderiza o ícone inicial do toggle
             renderStaticIcons(); 
         }
 
@@ -1180,7 +1451,6 @@
                 toggleFormButton.title = 'Ocultar formulário';
                 taskTextInput.focus();
             }
-            // (NOVO) Processa o ícone que acabou de ser trocado
             renderStaticIcons();
         }
 
@@ -1193,6 +1463,7 @@
                     handle: '.drag-handle',
                     ghostClass: 'sortable-ghost',
                     chosenClass: 'sortable-chosen',
+                    // Não permite arrastar tarefas concluídas
                     filter: '.task-card[data-task*="\\"status\\":\\"completed\\""]',
                     onEnd: (evt) => {
                         const listId = evt.target.id;
@@ -1213,6 +1484,7 @@
                             }
                         });
 
+                        // Se a tarefa mudou de lista (entre Foco e Backlog)
                         if (evt.from !== evt.to) {
                             const taskId = evt.item.dataset.taskId;
                             const newLocalListType = evt.to.id === 'focus-list' ? 'focus' : 'backlog';
@@ -1225,8 +1497,10 @@
 
                         if (tasksUpdated) {
                             saveTasks();
+                            // Renderiza novamente se mudou de lista, para garantir a ordem correta
                             if (evt.from !== evt.to) {
                                 renderTasks();
+                                showToast(`Tarefa movida para ${listType === 'focus' ? 'Foco do Dia' : 'Backlog'}!`, "success");
                             }
                         }
                     },
@@ -1238,15 +1512,17 @@
 
         // --- Inicialização da Aplicação ---
         function initApp() {
-            console.log("Iniciando FocoFlow v1.6 (Dark Mode Only)...");
+            console.log("Iniciando FocoFlow...");
 
             // Listeners Globais
             addTaskForm.addEventListener('submit', handleAddTask);
-            // (REMOVIDO) Listener do Dark Mode
             resetFocusButton.addEventListener('click', handleResetFocus);
             exportButton.addEventListener('click', handleExport);
             importInput.addEventListener('change', handleImport);
             toggleFormButton.addEventListener('click', toggleAddTaskForm);
+            
+            // Listener global para fechar o FAB quando clicar fora
+            document.addEventListener('click', handleGlobalClick);
 
             // Listeners das Listas (delegação)
             focusList.addEventListener('click', handleListClick);
@@ -1264,6 +1540,10 @@
             backlogList.addEventListener('keydown', handleEditCommit, true);
             completedList.addEventListener('blur', handleEditCommit, true);
             completedList.addEventListener('keydown', handleEditCommit, true);
+            
+            // Listeners do FAB
+            mainFabButton.addEventListener('click', handleFabAction);
+            fabActionMenu.addEventListener('click', handleFabAction);
 
             // Listeners do Modal
             notesModalCloseBtn.addEventListener('click', closeNotesModal);
@@ -1271,16 +1551,15 @@
             notesModalForm.addEventListener('submit', handleSaveNotes);
 
             // Configuração Inicial
-            // (REMOVIDO) initDarkMode();
             initFormVisibility();
             loadTasks(); // Isso chama renderTasks()
             initSortable();
 
-            // (MODIFICADO) Renderiza todos os ícones estáticos (cabeçalho, etc) via JS
+            // Renderiza todos os ícones estáticos (cabeçalho, etc) via JS
             renderStaticIcons();
         }
 
-        // (NOVO) Função para injetar SVGs estáticos
+        // Função para injetar SVGs estáticos
         function renderStaticIcons() {
             document.getElementById('logo-icon-placeholder').innerHTML = getIcon('logo');
             document.getElementById('import-icon-placeholder').innerHTML = getIcon('fileUp');
@@ -1293,6 +1572,9 @@
             document.getElementById('completed-title-icon-placeholder').innerHTML = getIcon('titleCompleted');
             document.getElementById('completed-arrow-icon-placeholder').innerHTML = getIcon('chevronDown');
             document.getElementById('modal-close-icon-placeholder').innerHTML = getIcon('close');
+            
+            // Ícone do FAB de excluir (secundário)
+            fabDeleteIcon.innerHTML = getIcon('delete');
         }
 
 
