@@ -84,7 +84,7 @@
         }
 
         /* Oculta ícone de calendário padrão */
-        .due-date-input::-webkit-calendar-picker-indicator {
+        .due-date-input::-webkit-calendar-picker-picker-indicator {
             display: none;
             -webkit-appearance: none;
         }
@@ -165,12 +165,37 @@
             outline: 2px solid transparent;
         }
 
-        /* Estilos do Modal de Notas */
+        /* Estilos do Modal */
         .modal-backdrop {
             background-color: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(4px);
             transition: opacity 0.2s ease-in-out;
         }
+
+        /* (NOVO) Transição de entrada para modal (usado por ambos os modais) */
+        .modal-content-enter {
+            transition: all 0.2s ease-out;
+            transform: scale(0.95);
+            opacity: 0;
+        }
+
+        .modal-content-enter-active {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* (NOVO) Transição de saída para modal (usado por ambos os modais) */
+        .modal-content-leave {
+            transition: all 0.15s ease-in;
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal-content-leave-active {
+            transform: scale(0.95);
+            opacity: 0;
+        }
+
 
         /* Ajuste no ícone de expandir/recolher */
         details[open] .details-arrow {
@@ -223,8 +248,6 @@
             stroke-linejoin: round;
         }
     </style>
-
-    <!-- (REMOVIDO) Bloco tailwind.config obsoleto -->
 </head>
 
 <!-- (MODIFICADO) Classes de body simplificadas para dark mode -->
@@ -247,7 +270,7 @@
                     Foco<span class="brand-gradient-text">Flow</span>
                 </h1>
                 <!-- (MODIFICADO) Cor do texto simplificada -->
-                <span class="text-sm text-gray-400 font-medium">v1.6</span>
+                <span class="text-sm text-gray-400 font-medium">v2.1</span> <!-- (MODIFICADO) Versão -->
             </div>
 
             <!-- Controles do Cabeçalho -->
@@ -256,10 +279,11 @@
                 <!-- (MODIFICADO) Botão de Importar simplificado -->
                 <label for="file-import"
                     class="relative cursor-pointer px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
-                    title="Importar .xlsx">
+                    title="Importar .xlsx ou .csv"> <!-- (MODIFICADO) Título -->
                     <!-- (MODIFICADO) Ícone SVG inline -->
                     <span id="import-icon-placeholder"></span>
-                    <input type="file" id="file-import" accept=".xlsx" class="sr-only">
+                    <!-- (MODIFICADO) Aceita .xlsx e .csv -->
+                    <input type="file" id="file-import" accept=".xlsx, .csv" class="sr-only">
                 </label>
 
                 <!-- (MODIFICADO) Botão de Exportar simplificado -->
@@ -276,8 +300,6 @@
                     title="Ocultar formulário">
                     <!-- O ícone será definido pelo JS -->
                 </button>
-
-                <!-- (REMOVIDO) Seletor de Modo Escuro -->
             </div>
         </header>
 
@@ -301,6 +323,18 @@
                         <option value="alta">Prioridade: Alta</option>
                         <option value="media" selected>Prioridade: Média</option>
                         <option value="baixa">Prioridade: Baixa</option>
+                    </select>
+                </div>
+
+                <!-- (NOVO) Seletor de Recorrência -->
+                <div class="flex-shrink-0">
+                    <label for="task-recurrence" class="sr-only">Recorrência</label>
+                    <select id="task-recurrence"
+                        class="w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px]">
+                        <option value="none" selected>Recorrência: Nenhuma</option>
+                        <option value="daily">Recorrência: Diária</option>
+                        <option value="weekly">Recorrência: Semanal</option>
+                        <option value="monthly">Recorrência: Mensal</option>
                     </select>
                 </div>
 
@@ -390,6 +424,26 @@
             </details>
         </section>
 
+        <!-- (NOVO) Seção: Histórico de Excluídos -->
+        <section id="deleted-section" class="mt-8">
+            <details class="panel rounded-lg shadow-sm overflow-hidden">
+                <summary
+                    class="p-4 cursor-pointer flex justify-between items-center text-lg font-semibold text-gray-500 hover:bg-gray-700/50 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <!-- Ícone SVG inline -->
+                        <span id="deleted-title-icon-placeholder"></span>
+                        Histórico de Excluídos
+                    </span>
+                    <!-- Ícone SVG inline -->
+                    <span id="deleted-arrow-icon-placeholder" class="transition-transform details-arrow"></span>
+                </summary>
+                <div id="deleted-list" class="p-4 border-t border-gray-700 space-y-3">
+                    <!-- Cards Excluídos serão inseridos aqui -->
+                </div>
+            </details>
+        </section>
+
+
     </div> <!-- Fim do Container Principal -->
 
     <!-- (NOVO) Rodapé com Marca D'água -->
@@ -414,11 +468,11 @@
 
         <!-- (MODIFICADO) Conteúdo do Modal simplificado -->
         <div id="notes-modal-content"
-            class="relative z-50 w-full max-w-lg bg-gray-800 rounded-lg shadow-2xl p-6 transition-all transform scale-95 opacity-0"
+            class="relative z-50 w-full max-w-lg bg-gray-800 rounded-lg shadow-2xl p-6 modal-content-enter"
             style="display: none;">
             <!-- Cabeçalho do Modal -->
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-xl font-semibold text-white">Notas da Demanda</h3>
+                <h3 class="text-xl font-semibold text-white">Editar Demanda</h3> <!-- (MODIFICADO) Título do Modal -->
                 <!-- (MODIFICADO) Botão de fechar simplificado -->
                 <button id="notes-modal-close" class="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white"
                     title="Fechar">
@@ -430,11 +484,43 @@
             <!-- Formulário do Modal -->
             <form id="notes-modal-form">
                 <input type="hidden" id="notes-modal-task-id">
-                <!-- (MODIFICADO) Texto da Tarefa simplificado -->
-                <p class="mb-4 p-3 bg-gray-700 rounded-md text-gray-200" id="notes-modal-task-text"></p>
+
+                <!-- (NOVO) Label para o Título da Demanda -->
+                <label for="notes-modal-task-text" class="block text-sm font-medium text-gray-400 mb-2">
+                    Demanda:
+                </label>
+                <!-- (MODIFICADO) Input para o Título da Demanda -->
+                <input type="text" id="notes-modal-task-text"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Descrição da Demanda">
+
+                <!-- (NOVO) Label para Prioridade -->
+                <label for="notes-modal-priority" class="block text-sm font-medium text-gray-400 mb-2 mt-4">
+                    Prioridade:
+                </label>
+                <!-- (NOVO) Seletor de Prioridade no Modal -->
+                <select id="notes-modal-priority"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="alta">Alta</option>
+                    <option value="media">Média</option>
+                    <option value="baixa">Baixa</option>
+                </select>
+
+                <!-- (NOVO) Label para Recorrência -->
+                <label for="notes-modal-recurrence" class="block text-sm font-medium text-gray-400 mb-2 mt-4">
+                    Recorrência:
+                </label>
+                <!-- (NOVO) Seletor de Recorrência no Modal -->
+                <select id="notes-modal-recurrence"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="none">Nenhuma</option>
+                    <option value="daily">Diária</option>
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensal</option>
+                </select>
 
                 <!-- (MODIFICADO) Label simplificado -->
-                <label for="notes-modal-textarea" class="block text-sm font-medium text-gray-400 mb-2">
+                <label for="notes-modal-textarea" class="block text-sm font-medium text-gray-400 mb-2 mt-4">
                     Detalhes e Notas:
                 </label>
                 <!-- (MODIFICADO) Textarea simplificado -->
@@ -446,10 +532,53 @@
                 <div class="mt-6 flex justify-end">
                     <button type="submit"
                         class="brand-gradient px-5 py-2.5 rounded-md text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all">
-                        Salvar Notas
+                        Salvar Demanda
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- (NOVO) Modal de Confirmação de Exclusão -->
+    <div id="confirm-delete-modal" class="fixed inset-0 z-40 flex items-center justify-center p-4 hidden">
+        <!-- Backdrop -->
+        <div id="confirm-delete-backdrop" class="modal-backdrop fixed inset-0 transition-opacity opacity-0"
+            style="display: none;"></div>
+
+        <!-- Conteúdo do Modal -->
+        <div id="confirm-delete-content"
+            class="relative z-50 w-full max-w-md bg-gray-800 rounded-lg shadow-2xl p-6 modal-content-enter"
+            style="display: none;">
+
+            <div class="flex items-start">
+                <!-- Ícone de Aviso -->
+                <div
+                    class="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-900/50 sm:h-10 sm:w-10">
+                    <span id="confirm-delete-icon-placeholder" class="text-red-400"></span>
+                </div>
+                <div class="ml-4 text-left">
+                    <h3 class="text-lg font-semibold text-white" id="modal-title">
+                        Excluir Demanda
+                    </h3>
+                    <div class="mt-2">
+                        <p class="text-sm text-gray-300" id="confirm-delete-text">
+                            Você tem certeza que deseja enviar esta demanda para o histórico de excluídos?
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botões de Ação -->
+            <div class="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                <button type="button" id="cancel-delete-btn"
+                    class="w-full sm:w-auto px-4 py-2.5 rounded-md bg-gray-700 border border-gray-600 text-white font-semibold shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all">
+                    Cancelar
+                </button>
+                <button type="button" id="confirm-delete-btn"
+                    class="w-full sm:w-auto px-4 py-2.5 rounded-md bg-red-600 text-white font-semibold shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all">
+                    Excluir
+                </button>
+            </div>
         </div>
     </div>
 
@@ -457,6 +586,7 @@
     <script>
         // --- Constantes da Aplicação ---
         const LOCAL_STORAGE_KEY = 'focoflow-tasks';
+        const LOCAL_STORAGE_KEY_DELETED = 'focoflow-deleted-tasks'; // (NOVO)
         const FORM_VISIBLE_KEY = 'focoflow-form-visible';
         const TODAY_NORM = new Date();
         TODAY_NORM.setHours(0, 0, 0, 0);
@@ -464,16 +594,21 @@
 
         // --- Globais da Aplicação ---
         let localTasks = [];
+        let localDeletedTasks = []; // (NOVO)
         let toastTimeout = null;
+        let taskToModify = null; // (NOVO) Guarda o ID da tarefa para modais
+
 
         // --- Elementos da DOM ---
         const addTaskForm = document.getElementById('add-task-form');
         const taskTextInput = document.getElementById('task-text');
         const taskPriorityInput = document.getElementById('task-priority');
+        const taskRecurrenceInput = document.getElementById('task-recurrence'); // (NOVO)
         const taskDueDateInput = document.getElementById('task-due-date');
         const focusList = document.getElementById('focus-list');
         const backlogList = document.getElementById('backlog-list');
         const completedList = document.getElementById('completed-list');
+        const deletedList = document.getElementById('deleted-list'); // (NOVO)
         // (REMOVIDO) Elementos do Dark Mode
         const resetFocusButton = document.getElementById('reset-focus-button');
         const exportButton = document.getElementById('export-button');
@@ -489,8 +624,18 @@
         const notesModalCloseBtn = document.getElementById('notes-modal-close');
         const notesModalForm = document.getElementById('notes-modal-form');
         const notesModalTaskId = document.getElementById('notes-modal-task-id');
-        const notesModalTaskText = document.getElementById('notes-modal-task-text');
+        const notesModalTaskText = document.getElementById('notes-modal-task-text'); // (MODIFICADO) Agora é um <input>
         const notesModalTextarea = document.getElementById('notes-modal-textarea');
+        const notesModalPriority = document.getElementById('notes-modal-priority'); // (NOVO) Seletor de prioridade do modal
+        const notesModalRecurrence = document.getElementById('notes-modal-recurrence'); // (NOVO) Seletor de recorrência do modal
+
+        // (NOVO) Elementos do Modal de Confirmação
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+        const confirmDeleteBackdrop = document.getElementById('confirm-delete-backdrop');
+        const confirmDeleteContent = document.getElementById('confirm-delete-content');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteText = document.getElementById('confirm-delete-text');
 
 
         // --- (MODIFICADO) Dicionário de Ícones (agora usa SVG Inline) ---
@@ -511,10 +656,13 @@
                 'fileDown': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6m-3 3 3 3 3-3"/></svg>',
                 'chevronDown': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="m6 9 6 6 6-6"/></svg>',
                 'close': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+                'trash': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>', // (NOVO)
+                'alertTriangle': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>', // (NOVO)
 
                 // Ícones de 16x16 (w-4, h-4)
                 'calendar': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
                 'alert': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+                'recurrence': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.6v-1.2a4.8 4.8 0 0 1 4.8-4.8h13.4"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.4v1.2a4.8 4.8 0 0 1-4.8 4.8H2.8"/></svg>', // (NOVO)
 
                 // Ícones de 28x28 (w-7, h-7)
                 'logo': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-lg" stroke="white"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
@@ -523,6 +671,7 @@
 
                 // Ícones de 24x24 (w-6, h-6)
                 'titleCompleted': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                'titleDeleted': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>', // (NOVO)
 
             };
             return icons[name] || '';
@@ -538,6 +687,19 @@
             return status === 'completed' ? 'Concluído' : 'Pendente';
         }
 
+        // (NOVO)
+        function getListText(list) {
+            const map = { focus: 'Foco', backlog: 'Backlog' };
+            return map[list] || 'Backlog';
+        }
+
+        // (NOVO)
+        function getRecurrenceText(recurrence) {
+            const type = (recurrence && recurrence.type) || 'none';
+            const map = { daily: 'Diária', weekly: 'Semanal', monthly: 'Mensal', none: 'Nenhuma' };
+            return map[type] || 'Nenhuma';
+        }
+
         function getPriorityFromText(text) {
             const lowerText = text ? text.toLowerCase() : '';
             if (lowerText.includes('alta')) return 'alta';
@@ -547,7 +709,24 @@
 
         function getStatusFromText(text) {
             const lowerText = text ? text.toLowerCase() : '';
+            // (MODIFICADO) Corrigido para retornar 'pending'
             return lowerText.includes('concluído') ? 'completed' : 'pending';
+        }
+
+        // (NOVO)
+        function getListFromText(text) {
+            const lowerText = text ? text.toLowerCase() : '';
+            if (lowerText.includes('foco')) return 'focus';
+            return 'backlog';
+        }
+
+        // (NOVO)
+        function getRecurrenceFromText(text) {
+            const lowerText = text ? text.toLowerCase() : '';
+            if (lowerText.includes('diária')) return 'daily';
+            if (lowerText.includes('semanal')) return 'weekly';
+            if (lowerText.includes('mensal')) return 'monthly';
+            return 'none';
         }
 
         function escapeAttr(str) {
@@ -632,7 +811,7 @@
 
         // --- Renderização ---
 
-        /** Renderiza todas as listas de tarefas */
+        /** Renderiza todas as listas de tarefas (ativas e concluídas) */
         function renderTasks() {
             focusList.innerHTML = '';
             backlogList.innerHTML = '';
@@ -673,23 +852,33 @@
             resetFocusButton.innerHTML = getIcon('reset');
             resetFocusButton.disabled = focusCompletedTasks.length === 0;
             resetFocusButton.classList.toggle('opacity-50', focusCompletedTasks.length === 0);
-
-            // (REMOVIDO) Processa os ícones recém-criados
-            // lucide.createIcons();
         }
 
-        /** (MODIFICADO) Cria o HTML para um único card de tarefa */
+        /** (NOVO) Renderiza a lista de tarefas excluídas */
+        function renderDeletedTasks() {
+            deletedList.innerHTML = '';
+            if (localDeletedTasks.length === 0) {
+                deletedList.innerHTML = '<p class="text-sm text-center text-gray-500 py-4">O histórico de excluídos está vazio.</p>';
+            } else {
+                localDeletedTasks
+                    .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0)) // Ordena pelos mais recentes
+                    .forEach(task => deletedList.appendChild(createDeletedTaskCard(task)));
+            }
+        }
+
+
+        /** (MODIFICADO) Cria o HTML para um único card de tarefa (ativa/concluída) */
         function createTaskCard(task) {
-            const { id, text, priority, status, list, dueDate, notes } = task;
+            const { id, text, priority, status, list, dueDate, notes, recurrence } = task; // (MODIFICADO) Adiciona recurrence
 
             const card = document.createElement('div');
             card.className = `task-card flex items-center gap-3 p-3.5 rounded-lg shadow ${status === 'completed' ? 'opacity-60' : ''}`;
-            card.dataset.task = JSON.stringify(task);
+            card.dataset.task = JSON.stringify(task); // Guarda o objeto task inteiro
             card.dataset.taskId = id;
 
             let actionsHtml = '';
             const notesIcon = (notes && notes.trim() !== "") ? getIcon('notesFilled') : getIcon('notes');
-            const notesTitle = (notes && notes.trim() !== "") ? 'Ver/Editar Notas' : 'Adicionar Notas';
+            const notesTitle = (notes && notes.trim() !== "") ? 'Ver/Editar Demanda' : 'Adicionar Notas'; // (MODIFICADO) Título unificado
             const notesIconClass = (notes && notes.trim() !== "") ? 'text-blue-400' : '';
 
             if (status === 'pending') {
@@ -701,11 +890,11 @@
                     <button class="task-action-btn" data-action="${moveAction}" title="${list === 'focus' ? 'Mover para Backlog' : 'Mover para Foco'}">
                         ${getIcon(moveAction)}
                     </button>
-                    <button class="task-action-btn" data-action="delete" title="Excluir Tarefa">
-                        ${getIcon('delete')}
+                    <button class="task-action-btn text-red-500/70 hover:text-red-400" data-action="delete" title="Excluir Tarefa">
+                        ${getIcon('trash')}
                     </button>
                 `;
-            } else if (list === 'backlog') {
+            } else if (list === 'backlog') { // Concluído no Backlog
                 actionsHtml = `
                      <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
                         <span class="${notesIconClass}">${notesIcon}</span>
@@ -713,11 +902,11 @@
                     <button class="task-action-btn" data-action="reopen" title="Reabrir Tarefa">
                         ${getIcon('reopen')}
                     </button>
-                    <button class="task-action-btn" data-action="delete" title="Excluir Tarefa">
-                        ${getIcon('delete')}
+                    <button class="task-action-btn text-red-500/70 hover:text-red-400" data-action="delete" title="Excluir Tarefa">
+                        ${getIcon('trash')}
                     </button>
                 `;
-            } else {
+            } else { // Concluído no Foco do Dia
                 actionsHtml = `
                     <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
                         <span class="${notesIconClass}">${notesIcon}</span>
@@ -726,12 +915,17 @@
             }
 
             const dragHandleHtml = (status === 'pending') ?
-                `<span class="drag-handle flex-shrink-0 p-1 text-gray-500 hover:text-gray-200">
+                `<span class="drag-handle flex-shrink-0 p-1 text-gray-500 hover:text-gray-200" data-action="drag">
                     ${getIcon('dragHandle')}
                 </span>` :
-                `<span class="flex-shrink-0 w-7"></span>`;
+                `<span class="flex-shrink-0 w-7"></span>`; // (MODIFICADO) Adicionado data-action="drag"
 
             const priorityClasses = getPriorityClasses(priority);
+
+            // (NOVO) Adiciona ícone de recorrência
+            const recurrenceIconHtml = (recurrence && recurrence.type !== 'none') ?
+                `<span class="flex-shrink-0 text-blue-400" title="Tarefa Recorrente: ${getRecurrenceText(recurrence)}">${getIcon('recurrence')}</span>` :
+                '';
 
             card.innerHTML = `
                 ${dragHandleHtml}
@@ -741,9 +935,16 @@
                 </label>
                 
                 <div class="flex-grow min-w-0">
-                    <span class="task-text-display block w-full truncate cursor-pointer text-gray-100 ${status === 'completed' && list === 'focus' ? 'line-through' : ''}">${escapeAttr(text)}</span>
-                    <input type="text" class="task-edit-input hidden w-full px-2 py-1 rounded bg-gray-700 border border-blue-500 focus:outline-none" value="${escapeAttr(text)}">
+                    <!-- (MODIFICADO) Adicionado data-action="edit-task" e title. Removido input inline. -->
+                    <span 
+                        class="task-text-display block w-full truncate cursor-pointer text-gray-100 ${status === 'completed' && list === 'focus' ? 'line-through' : ''}" 
+                        data-action="edit-task" 
+                        title="Editar Demanda"
+                    >${escapeAttr(text)}</span>
                 </div>
+
+                <!-- (NOVO) Ícone de recorrência adicionado -->
+                ${recurrenceIconHtml}
                 
                 <div class="due-date-container flex-shrink-0 w-[120px] flex justify-end">
                     ${createDueDateInput(dueDate)}
@@ -765,6 +966,49 @@
 
             return card;
         }
+
+        /** (NOVO) Cria o HTML para um card de tarefa excluída */
+        function createDeletedTaskCard(task) {
+            const { id, text, priority } = task;
+
+            const card = document.createElement('div');
+            // (MODIFICADO) Guarda o ID, não o objeto task inteiro
+            card.dataset.taskId = id;
+            card.className = 'task-card flex items-center gap-3 p-3.5 rounded-lg shadow opacity-70';
+
+            const priorityClasses = getPriorityClasses(priority);
+
+            card.innerHTML = `
+                <span class="flex-shrink-0 w-7"></span> <!-- Espaçador (no lugar do drag/checkbox) -->
+                
+                <div class="flex-grow min-w-0">
+                    <span class="task-text-display block w-full truncate text-gray-400 line-through">
+                        ${escapeAttr(text)}
+                    </span>
+                </div>
+
+                <span class="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${priorityClasses.badge}">
+                    <span class="h-2 w-2 rounded-full ${priorityClasses.dot}"></span>
+                    <span>${getPriorityText(priority)}</span>
+                </span>
+
+                <div class="task-actions flex-shrink-0 flex items-center gap-2 text-gray-400">
+                    <button class="task-action-btn text-green-400/80 hover:text-green-400" data-action="restore" title="Restaurar Tarefa">
+                        ${getIcon('reopen')}
+                    </button>
+                    <button class="task-action-btn text-red-500/70 hover:text-red-400" data-action="delete-permanently" title="Excluir Permanentemente">
+                        ${getIcon('delete')}
+                    </button>
+                </div>
+            `;
+
+            card.querySelectorAll('.task-action-btn').forEach(btn => {
+                btn.classList.add('p-1', 'rounded-md');
+            });
+
+            return card;
+        }
+
 
         /** (MODIFICADO) Helper para criar o input de data ou o botão de adicionar data */
         function createDueDateInput(dueDateString) {
@@ -802,9 +1046,9 @@
             try {
                 const tasksJson = localStorage.getItem(LOCAL_STORAGE_KEY);
                 localTasks = tasksJson ? JSON.parse(tasksJson) : [];
-                console.log("Tarefas carregadas:", localTasks.length);
+                console.log("Tarefas ativas carregadas:", localTasks.length);
             } catch (e) {
-                console.error("Erro ao carregar tarefas:", e);
+                console.error("Erro ao carregar tarefas ativas:", e);
                 localTasks = [];
                 showToast("Erro ao carregar suas tarefas.", "error");
             }
@@ -814,18 +1058,112 @@
         function saveTasks() {
             try {
                 localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localTasks));
-                console.log("Tarefas salvas.");
+                console.log("Tarefas ativas salvas.");
             } catch (e) {
-                console.error("Erro ao salvar tarefas:", e);
+                console.error("Erro ao salvar tarefas ativas:", e);
                 showToast("Não foi possível salvar suas tarefas.", "error");
             }
         }
+
+        // (NOVO)
+        function loadDeletedTasks() {
+            try {
+                const tasksJson = localStorage.getItem(LOCAL_STORAGE_KEY_DELETED);
+                localDeletedTasks = tasksJson ? JSON.parse(tasksJson) : [];
+                console.log("Tarefas excluídas carregadas:", localDeletedTasks.length);
+            } catch (e) {
+                console.error("Erro ao carregar tarefas excluídas:", e);
+                localDeletedTasks = [];
+            }
+            renderDeletedTasks();
+        }
+
+        // (NOVO)
+        function saveDeletedTasks() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY_DELETED, JSON.stringify(localDeletedTasks));
+                console.log("Tarefas excluídas salvas.");
+            } catch (e) {
+                console.error("Erro ao salvar tarefas excluídas:", e);
+            }
+        }
+
+        // (NOVO) Calcula a próxima data de vencimento para tarefas recorrentes
+        function calculateNextDueDate(task) {
+            const { dueDate, recurrence } = task;
+            const type = (recurrence && recurrence.type) || 'none';
+
+            if (type === 'none' || !dueDate) {
+                return dueDate; // Retorna a data existente se não houver recorrência ou data base
+            }
+
+            // Começa da data de vencimento *atual*
+            const dateParts = dueDate.split('-').map(Number);
+            const nextDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            nextDate.setHours(12, 0, 0, 0); // Evita problemas de fuso horário
+
+            // Garante que a próxima data seja no futuro (depois de HOJE)
+            const today = TODAY_NORM;
+
+            switch (type) {
+                case 'daily':
+                    do {
+                        nextDate.setDate(nextDate.getDate() + 1);
+                    } while (nextDate <= today);
+                    break;
+                case 'weekly':
+                    do {
+                        nextDate.setDate(nextDate.getDate() + 7);
+                    } while (nextDate <= today);
+                    break;
+                case 'monthly':
+                    do {
+                        nextDate.setMonth(nextDate.getMonth() + 1);
+                    } while (nextDate <= today);
+                    break;
+                default:
+                    return dueDate; // Tipo desconhecido, não faz nada
+            }
+
+            // Formata de volta para YYYY-MM-DD
+            return nextDate.toISOString().split('T')[0];
+        }
+
+        // (NOVO) Verifica tarefas recorrentes no backlog que deveriam estar no Foco
+        function checkRecurringTasks() {
+            console.log("Verificando tarefas recorrentes...");
+            const todayStr = TODAY_NORM.toISOString().split('T')[0];
+            let tasksUpdated = false;
+
+            localTasks.forEach((task, index) => {
+                const recurrenceType = (task.recurrence && task.recurrence.type) || 'none';
+
+                // Se for recorrente, estiver no backlog, pendente, e tiver uma data de vencimento
+                if (recurrenceType !== 'none' && task.list === 'backlog' && task.status === 'pending' && task.dueDate) {
+
+                    // Se a data de vencimento for hoje ou anterior
+                    if (task.dueDate <= todayStr) {
+                        console.log(`Movendo tarefa recorrente para o Foco: ${task.text}`);
+                        localTasks[index].list = 'focus';
+                        localTasks[index].order = Date.now() + index;
+                        tasksUpdated = true;
+                    }
+                }
+            });
+
+            if (tasksUpdated) {
+                saveTasks();
+                renderTasks(); // Re-renderiza se houver mudanças
+            }
+        }
+
 
         function handleAddTask(e) {
             e.preventDefault();
             const listType = e.submitter.dataset.list;
             const text = taskTextInput.value.trim();
             const priority = taskPriorityInput.value;
+            const recurrenceType = taskRecurrenceInput.value; // (NOVO)
             const dueDate = taskDueDateInput.value || null;
 
             if (!text) {
@@ -843,6 +1181,7 @@
                 list: listType,
                 dueDate: dueDate,
                 notes: "",
+                recurrence: { type: recurrenceType }, // (MODIFICADO)
                 createdAt: now,
                 order: now
             };
@@ -853,6 +1192,7 @@
 
             taskTextInput.value = '';
             taskPriorityInput.value = 'media';
+            taskRecurrenceInput.value = 'none'; // (NOVO)
             taskDueDateInput.value = '';
         }
 
@@ -866,12 +1206,52 @@
             }
         }
 
-        function deleteTask(id) {
-            localTasks = localTasks.filter(t => t.id !== id);
+        /** (NOVO) Move uma tarefa da lista ativa para o histórico de excluídos */
+        function archiveTask(id) {
+            const taskIndex = localTasks.findIndex(t => t.id === id);
+            if (taskIndex === -1) return;
+
+            const [taskToArchive] = localTasks.splice(taskIndex, 1);
+            taskToArchive.deletedAt = Date.now(); // Adiciona timestamp
+            localDeletedTasks.push(taskToArchive);
+
             saveTasks();
+            saveDeletedTasks();
             renderTasks();
-            console.log("Tarefa excluída:", id);
+            renderDeletedTasks();
+            console.log("Tarefa arquivada:", id);
+            showToast("Demanda movida para o histórico.", "info");
         }
+
+        /** (NOVO) Restaura uma tarefa do histórico para o Backlog */
+        function restoreTask(id) {
+            const taskIndex = localDeletedTasks.findIndex(t => t.id === id);
+            if (taskIndex === -1) return;
+
+            const [taskToRestore] = localDeletedTasks.splice(taskIndex, 1);
+            delete taskToRestore.deletedAt;
+            taskToRestore.list = 'backlog'; // Padrão ao restaurar
+            taskToRestore.status = 'pending';
+            taskToRestore.order = Date.now();
+            localTasks.push(taskToRestore);
+
+            saveTasks();
+            saveDeletedTasks();
+            renderTasks();
+            renderDeletedTasks();
+            console.log("Tarefa restaurada:", id);
+            showToast("Demanda restaurada para o Backlog.", "success");
+        }
+
+        /** (NOVO) Exclui permanentemente uma tarefa do histórico */
+        function deletePermanently(id) {
+            localDeletedTasks = localDeletedTasks.filter(t => t.id !== id);
+            saveDeletedTasks();
+            renderDeletedTasks();
+            console.log("Tarefa excluída permanentemente:", id);
+            showToast("Demanda excluída permanentemente.", "info");
+        }
+
 
         function handleResetFocus() {
             let tasksUpdated = false;
@@ -897,59 +1277,157 @@
 
         function openNotesModal(task) {
             notesModalTaskId.value = task.id;
-            notesModalTaskText.textContent = task.text;
+            notesModalTaskText.value = task.text; // (MODIFICADO) Usa .value para input
             notesModalTextarea.value = task.notes || "";
+            notesModalPriority.value = task.priority || "media"; // (NOVO) Define a prioridade atual
+            notesModalRecurrence.value = (task.recurrence && task.recurrence.type) || "none"; // (NOVO) Define a recorrência
 
             notesModal.classList.remove('hidden');
             notesModalBackdrop.style.display = 'block';
             notesModalContent.style.display = 'block';
 
-            void notesModalContent.offsetWidth;
+            void notesModalContent.offsetWidth; // Força o repaint para a animação
 
             notesModalBackdrop.classList.add('opacity-100');
-            notesModalContent.classList.remove('scale-95', 'opacity-0');
-            notesModalContent.classList.add('scale-100', 'opacity-100');
+            notesModalContent.classList.add('modal-content-enter-active');
+            notesModalContent.classList.remove('modal-content-enter');
 
-            notesModalTextarea.focus();
 
-            // (REMOVIDO) Processa o ícone 'X' do modal
-            // lucide.createIcons();
+            // (MODIFICADO) Foca no input de texto se for uma edição de tarefa, senão foca no textarea
+            const triggerAction = document.activeElement ? document.activeElement.dataset.action : null;
+            if (triggerAction === 'edit-task') {
+                notesModalTaskText.focus();
+                notesModalTaskText.select();
+            } else {
+                notesModalTextarea.focus();
+            }
         }
 
         function closeNotesModal() {
             notesModalBackdrop.classList.remove('opacity-100');
-            notesModalContent.classList.remove('scale-100', 'opacity-100');
-            notesModalContent.classList.add('scale-95', 'opacity-0');
+            notesModalContent.classList.remove('modal-content-enter-active');
+            notesModalContent.classList.add('modal-content-leave-active');
 
             setTimeout(() => {
                 notesModal.classList.add('hidden');
                 notesModalBackdrop.style.display = 'none';
                 notesModalContent.style.display = 'none';
+                notesModalContent.classList.remove('modal-content-leave-active');
+                notesModalContent.classList.add('modal-content-enter'); // Reseta para a próxima abertura
+                // Limpa os campos
                 notesModalTaskId.value = "";
-                notesModalTaskText.textContent = "";
+                notesModalTaskText.value = ""; // (MODIFICADO) Usa .value para input
                 notesModalTextarea.value = "";
-            }, 200);
+                notesModalPriority.value = "media"; // (NOVO) Reseta a prioridade
+                notesModalRecurrence.value = "none"; // (NOVO) Reseta a recorrência
+            }, 150);
         }
 
+        // (MODIFICADO) Salva tanto o texto da demanda quanto as notas
         function handleSaveNotes(e) {
             e.preventDefault();
             const taskId = notesModalTaskId.value;
+            const newText = notesModalTaskText.value.trim();
             const newNotes = notesModalTextarea.value;
+            const newPriority = notesModalPriority.value; // (NOVO) Pega a nova prioridade
+            const newRecurrenceType = notesModalRecurrence.value; // (NOVO) Pega a nova recorrência
+
+            if (!newText) {
+                showToast("A demanda não pode ficar em branco.", "error");
+                notesModalTaskText.focus();
+                return;
+            }
 
             if (taskId) {
-                updateTask(taskId, { notes: newNotes });
-                showToast("Notas salvas com sucesso!", "success");
+                updateTask(taskId, {
+                    text: newText,
+                    notes: newNotes,
+                    priority: newPriority,
+                    recurrence: { type: newRecurrenceType } // (MODIFICADO) Salva a recorrência
+                });
+                showToast("Demanda salva com sucesso!", "success");
             }
             closeNotesModal();
         }
 
+        // --- (NOVO) Funções do Modal de Confirmação ---
+
+        function openDeleteConfirmModal(task) {
+            taskToModify = task.id; // Armazena o ID da tarefa
+            confirmDeleteText.textContent = `Você tem certeza que deseja enviar esta demanda para o histórico de excluídos?`;
+            confirmDeleteBtn.textContent = "Excluir";
+            confirmDeleteBtn.dataset.action = "archive"; // Define a ação
+
+            confirmDeleteModal.classList.remove('hidden');
+            confirmDeleteBackdrop.style.display = 'block';
+            confirmDeleteContent.style.display = 'block';
+
+            void confirmDeleteContent.offsetWidth; // Força repaint
+
+            confirmDeleteBackdrop.classList.add('opacity-100');
+            confirmDeleteContent.classList.add('modal-content-enter-active');
+            confirmDeleteContent.classList.remove('modal-content-enter');
+
+            confirmDeleteBtn.focus();
+        }
+
+        function openDeletePermanentlyConfirmModal(taskId) {
+            taskToModify = taskId;
+            confirmDeleteText.textContent = "Esta ação é irreversível. Deseja excluir permanentemente esta demanda?";
+            confirmDeleteBtn.textContent = "Excluir Permanentemente";
+            confirmDeleteBtn.dataset.action = "delete-permanently"; // Define a ação
+
+            confirmDeleteModal.classList.remove('hidden');
+            confirmDeleteBackdrop.style.display = 'block';
+            confirmDeleteContent.style.display = 'block';
+
+            void confirmDeleteContent.offsetWidth;
+
+            confirmDeleteBackdrop.classList.add('opacity-100');
+            confirmDeleteContent.classList.add('modal-content-enter-active');
+            confirmDeleteContent.classList.remove('modal-content-enter');
+
+            confirmDeleteBtn.focus();
+        }
+
+
+        function closeDeleteConfirmModal() {
+            confirmDeleteBackdrop.classList.remove('opacity-100');
+            confirmDeleteContent.classList.remove('modal-content-enter-active');
+            confirmDeleteContent.classList.add('modal-content-leave-active');
+
+            setTimeout(() => {
+                confirmDeleteModal.classList.add('hidden');
+                confirmDeleteBackdrop.style.display = 'none';
+                confirmDeleteContent.style.display = 'none';
+                confirmDeleteContent.classList.remove('modal-content-leave-active');
+                confirmDeleteContent.classList.add('modal-content-enter'); // Reseta
+                taskToModify = null;
+            }, 150);
+        }
+
+        function handleConfirmDelete() {
+            if (!taskToModify) return;
+
+            const action = confirmDeleteBtn.dataset.action;
+            if (action === "archive") {
+                archiveTask(taskToModify);
+            } else if (action === "delete-permanently") {
+                deletePermanently(taskToModify);
+            }
+
+            closeDeleteConfirmModal();
+        }
+
+
 
         // --- Manipuladores de Eventos (Clicks, Edição) ---
 
+        // (MODIFICADO) handleListClick agora usa data-action para tudo
         function handleListClick(e) {
-            const clickableElement = e.target.closest('button, input[type="checkbox"]');
+            const clickableElement = e.target.closest('[data-action]');
 
-            if (e.target.closest('.drag-handle')) {
+            if (clickableElement && clickableElement.dataset.action === 'drag') {
                 return;
             }
 
@@ -958,13 +1436,38 @@
             const card = e.target.closest('.task-card');
             if (!card) return;
 
+            // (MODIFICADO) Pega a task *do dataset*
             const task = JSON.parse(card.dataset.task);
             const action = clickableElement.dataset.action;
 
             switch (action) {
+                // (MODIFICADO) Lógica de conclusão para recorrência
                 case 'toggle-status':
-                    const newStatus = clickableElement.checked ? 'completed' : 'pending';
-                    updateTask(task.id, { status: newStatus });
+                    const isChecking = clickableElement.checked;
+
+                    if (isChecking) {
+                        // Marcar como concluído
+                        const recurrenceType = (task.recurrence && task.recurrence.type) || 'none';
+
+                        // A tarefa só é recorrente SE tiver um tipo E uma data de vencimento
+                        if (recurrenceType !== 'none' && task.dueDate) {
+                            // É uma tarefa recorrente
+                            const nextDueDate = calculateNextDueDate(task);
+                            updateTask(task.id, {
+                                list: 'backlog', // Mover de volta para o backlog
+                                dueDate: nextDueDate,
+                                status: 'pending', // Manter pendente
+                                order: Date.now()
+                            });
+                            showToast("Tarefa recorrente reagendada!", "success");
+                        } else {
+                            // Tarefa normal, não recorrente (ou sem data)
+                            updateTask(task.id, { status: 'completed' });
+                        }
+                    } else {
+                        // Marcar como pendente (comportamento normal)
+                        updateTask(task.id, { status: 'pending' });
+                    }
                     break;
                 case 'moveToFocus':
                     updateTask(task.id, { list: 'focus', order: Date.now() });
@@ -982,12 +1485,43 @@
                 case 'open-notes':
                     openNotesModal(task);
                     break;
+                // (NOVO) Caso para editar a tarefa
+                case 'edit-task':
+                    if (task.status === 'completed' && task.list === 'focus') { // (MODIFICADO) Permite edição de concluídas do backlog
+                        showToast("Não é possível editar tarefas concluídas do 'Foco do Dia'.", "info");
+                        return;
+                    }
+                    openNotesModal(task);
+                    break;
                 case 'delete':
-                    console.warn(`Excluindo tarefa: ${task.text}`);
-                    deleteTask(task.id);
+                    // (MODIFICADO) Chama o modal de confirmação em vez de excluir direto
+                    openDeleteConfirmModal(task);
                     break;
             }
         }
+
+        /** (NOVO) Manipulador de cliques para a lista de excluídos */
+        function handleDeletedListClick(e) {
+            const clickableElement = e.target.closest('[data-action]');
+            if (!clickableElement) return;
+
+            const card = e.target.closest('.task-card');
+            if (!card) return;
+
+            const taskId = card.dataset.taskId;
+            const action = clickableElement.dataset.action;
+
+            switch (action) {
+                case 'restore':
+                    restoreTask(taskId);
+                    break;
+                case 'delete-permanently':
+                    // (MODIFICADO) Chama o modal de confirmação
+                    openDeletePermanentlyConfirmModal(taskId);
+                    break;
+            }
+        }
+
 
         function handleListChange(e) {
             const input = e.target;
@@ -1002,55 +1536,6 @@
             }
         }
 
-        function handleListDoubleClick(e) {
-            if (e.target.closest('.drag-handle, button, input, label')) {
-                return;
-            }
-
-            const textDisplay = e.target.closest('.task-text-display');
-            if (!textDisplay) return;
-
-            const card = textDisplay.closest('.task-card');
-            const editInput = card.querySelector('.task-edit-input');
-            const task = JSON.parse(card.dataset.task);
-
-            if (task.status === 'completed') {
-                return;
-            }
-
-            textDisplay.classList.add('hidden');
-            editInput.classList.remove('hidden');
-            editInput.focus();
-            editInput.select();
-        }
-
-        function handleEditCommit(e) {
-            if (e.target.classList.contains('task-edit-input')) {
-                if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Escape') {
-                    return;
-                }
-                const card = e.target.closest('.task-card');
-                if (!card) return;
-                const task = JSON.parse(card.dataset.task);
-                const textDisplay = card.querySelector('.task-text-display');
-                const editInput = e.target;
-
-                if (e.key === 'Escape') {
-                    editInput.value = task.text;
-                } else {
-                    const newText = editInput.value.trim();
-                    if (newText && newText !== task.text) {
-                        updateTask(task.id, { text: newText });
-                        return;
-                    } else if (!newText) {
-                        editInput.value = task.text;
-                    }
-                }
-                editInput.classList.add('hidden');
-                textDisplay.classList.remove('hidden');
-            }
-        }
-
         // --- Funções de Importar/Exportar (Excel) ---
 
         function handleExport() {
@@ -1059,20 +1544,28 @@
                 return;
             }
             try {
+                // (MODIFICADO) Adiciona lista (Foco/Backlog)
                 const dataToExport = localTasks.map(task => ({
                     status: getStatusText(task.status),
+                    lista: getListText(task.list), // (NOVO)
                     demanda: task.text,
                     prioridade: getPriorityText(task.priority),
+                    recorrência: getRecurrenceText(task.recurrence),
                     vencimento: task.dueDate || '',
                     notas: task.notes || ''
                 }));
                 const ws = XLSX.utils.json_to_sheet(dataToExport);
                 ws['!cols'] = [
-                    { wch: 15 }, { wch: 60 }, { wch: 15 }, { wch: 12 }, { wch: 40 }
+                    { wch: 15 }, { wch: 12 }, { wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 40 } // (MODIFICADO)
                 ];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'TESTE');
-                XLSX.writeFile(wb, 'FocoFlow_Export.xlsx');
+
+                // (MODIFICADO) Adiciona a data atual ao nome do arquivo
+                const dateString = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+                const fileName = `FocoFlow_Export_${dateString}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+
                 showToast("Tarefas exportadas com sucesso!", "success");
             } catch (e) {
                 console.error("Erro ao exportar:", e);
@@ -1080,56 +1573,111 @@
             }
         }
 
+        // (MODIFICADO) Função atualizada para lidar com .xlsx e .csv
         function handleImport(e) {
             const file = e.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
             reader.onload = (event) => {
                 try {
-                    const data = new Uint8Array(event.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = 'TESTE';
-                    if (!workbook.SheetNames.includes(sheetName)) {
-                        throw new Error(`Planilha "TESTE" não encontrada no arquivo.`);
+                    let workbook;
+                    let sheetName; // (NOVO)
+
+                    if (fileExtension === 'xlsx') {
+                        const data = new Uint8Array(event.target.result);
+                        workbook = XLSX.read(data, { type: 'array' });
+                        sheetName = 'TESTE'; // Para .xlsx, esperamos a planilha 'TESTE'
+                        if (!workbook.SheetNames.includes(sheetName)) {
+                            throw new Error(`Planilha "TESTE" não encontrada no arquivo .xlsx.`);
+                        }
+                    } else if (fileExtension === 'csv') {
+                        const data = event.target.result; // String de readAsText
+                        workbook = XLSX.read(data, { type: 'string' });
+                        sheetName = workbook.SheetNames[0]; // Para .csv, apenas pegamos a *primeira* planilha
+                        if (!sheetName) {
+                            throw new Error("Arquivo CSV inválido ou vazio.");
+                        }
+                    } else {
+                        throw new Error("Formato de arquivo não suportado. Use .xlsx ou .csv");
                     }
+
+                    // (MODIFICADO) A lógica agora usa a 'sheetName' variável
                     const ws = workbook.Sheets[sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(ws, { raw: false });
+
                     if (jsonData.length === 0) {
-                        showToast("Nenhuma tarefa encontrada na planilha 'TESTE'.", "info");
+                        showToast("Nenhuma tarefa encontrada na planilha.", "info");
                         return;
                     }
+
                     const newTasks = [];
                     const now = Date.now();
                     jsonData.forEach((row, index) => {
                         const demanda = row['demanda'] || row['Demanda'];
+                        if (!demanda) return; // Pula linha se não houver demanda
+
                         const statusRaw = row['status'] || row['Status'];
+                        const listaRaw = row['lista'] || row['Lista']; // (NOVO)
                         const prioridadeRaw = row['prioridade'] || row['Prioridade'];
+                        const recorrenciaRaw = row['recorrência'] || row['Recorrência']; // (NOVO)
                         const vencimentoRaw = row['vencimento'] || row['Vencimento'];
                         const notasRaw = row['notas'] || row['Notas'];
+
                         let vencimento = null;
                         if (vencimentoRaw) {
-                            if (/^\d{4}-\d{2}-\d{2}$/.test(vencimentoRaw)) {
-                                vencimento = vencimentoRaw;
-                            } else if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(vencimentoRaw)) {
-                                try {
-                                    const d = new Date(vencimentoRaw);
-                                    vencimento = d.toISOString().split('T')[0];
-                                } catch (dateError) {
-                                    console.warn("Formato de data inválido:", vencimentoRaw);
+                            // Tenta analisar o número de série do Excel (data)
+                            if (typeof vencimentoRaw === 'number' && vencimentoRaw > 1) {
+                                const excelDate = new Date(Math.round((vencimentoRaw - 25569) * 86400 * 1000));
+                                vencimento = excelDate.toISOString().split('T')[0];
+                            }
+                            // Tenta analisar formatos de string comuns
+                            else if (typeof vencimentoRaw === 'string') {
+                                if (/^\d{4}-\d{2}-\d{2}$/.test(vencimentoRaw)) {
+                                    vencimento = vencimentoRaw;
+                                } else if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(vencimentoRaw)) {
+                                    try {
+                                        // Converte DD/MM/YYYY para YYYY-MM-DD
+                                        const parts = vencimentoRaw.split('/');
+                                        const day = parts[0].padStart(2, '0');
+                                        const month = parts[1].padStart(2, '0');
+                                        const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+                                        vencimento = `${year}-${month}-${day}`;
+                                    } catch (dateError) {
+                                        console.warn("Formato de data inválido:", vencimentoRaw);
+                                    }
                                 }
                             }
                         }
-                        if (demanda) {
-                            const status = getStatusFromText(statusRaw);
-                            const prioridade = getPriorityFromText(prioridadeRaw);
-                            const notas = (notasRaw || "").trim();
-                            newTasks.push({
-                                id: crypto.randomUUID(),
-                                text: demanda.trim(), priority: prioridade, status: status,
-                                list: status === 'completed' ? 'backlog' : 'focus',
-                                dueDate: vencimento, notes: notas, createdAt: now + index, order: now + index
-                            });
+
+                        const status = getStatusFromText(statusRaw);
+                        const prioridade = getPriorityFromText(prioridadeRaw);
+                        const recorrencia = getRecurrenceFromText(recorrenciaRaw); // (NOVO)
+                        const notas = (notasRaw || "").trim();
+
+                        // (NOVO) Determina a lista
+                        let listaFinal = 'backlog';
+                        if (status === 'completed') {
+                            listaFinal = 'backlog'; // Concluídas sempre vão para o backlog
+                        } else {
+                            listaFinal = getListFromText(listaRaw); // Foco ou Backlog
                         }
+
+                        newTasks.push({
+                            id: crypto.randomUUID(),
+                            text: demanda.trim(),
+                            priority: prioridade,
+                            status: status,
+                            list: listaFinal, // (MODIFICADO)
+                            dueDate: vencimento,
+                            notes: notas,
+                            recurrence: { type: recorrencia }, // (NOVO)
+                            createdAt: now + index,
+                            order: now + index
+                        });
+
                     });
                     if (newTasks.length > 0) {
                         localTasks = [...localTasks, ...newTasks];
@@ -1146,11 +1694,17 @@
                     e.target.value = null;
                 }
             };
-            reader.readAsArrayBuffer(file);
+
+            // (NOVO) Decide como ler o arquivo
+            if (fileExtension === 'xlsx') {
+                reader.readAsArrayBuffer(file); // Para binário
+            } else if (fileExtension === 'csv') {
+                reader.readAsText(file, 'UTF-8'); // Para texto
+            } else {
+                showToast("Formato de arquivo inválido. Use .xlsx ou .csv", "error");
+                e.target.value = null; // Limpa o input
+            }
         }
-
-        // --- (REMOVIDO) Funções do Modo Escuro ---
-
 
         // --- Funções de Visibilidade do Formulário ---
         function initFormVisibility() {
@@ -1165,7 +1719,7 @@
                 toggleFormButton.title = 'Ocultar formulário';
             }
             // (NOVO) Renderiza o ícone inicial do toggle
-            renderStaticIcons(); 
+            renderStaticIcons();
         }
 
         function toggleAddTaskForm() {
@@ -1238,11 +1792,10 @@
 
         // --- Inicialização da Aplicação ---
         function initApp() {
-            console.log("Iniciando FocoFlow v1.6 (Dark Mode Only)...");
+            console.log("Iniciando FocoFlow v2.1 (Import/Export de Lista)...");
 
             // Listeners Globais
             addTaskForm.addEventListener('submit', handleAddTask);
-            // (REMOVIDO) Listener do Dark Mode
             resetFocusButton.addEventListener('click', handleResetFocus);
             exportButton.addEventListener('click', handleExport);
             importInput.addEventListener('change', handleImport);
@@ -1252,35 +1805,33 @@
             focusList.addEventListener('click', handleListClick);
             backlogList.addEventListener('click', handleListClick);
             completedList.addEventListener('click', handleListClick);
+            deletedList.addEventListener('click', handleDeletedListClick); // (NOVO)
             focusList.addEventListener('change', handleListChange);
             backlogList.addEventListener('change', handleListChange);
             completedList.addEventListener('change', handleListChange);
-            focusList.addEventListener('dblclick', handleListDoubleClick);
-            backlogList.addEventListener('dblclick', handleListDoubleClick);
-            completedList.addEventListener('dblclick', handleListDoubleClick);
-            focusList.addEventListener('blur', handleEditCommit, true);
-            focusList.addEventListener('keydown', handleEditCommit, true);
-            backlogList.addEventListener('blur', handleEditCommit, true);
-            backlogList.addEventListener('keydown', handleEditCommit, true);
-            completedList.addEventListener('blur', handleEditCommit, true);
-            completedList.addEventListener('keydown', handleEditCommit, true);
 
-            // Listeners do Modal
+            // Listeners do Modal de Notas
             notesModalCloseBtn.addEventListener('click', closeNotesModal);
             notesModalBackdrop.addEventListener('click', closeNotesModal);
             notesModalForm.addEventListener('submit', handleSaveNotes);
 
+            // (NOVO) Listeners do Modal de Confirmação
+            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+            cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
+            confirmDeleteBackdrop.addEventListener('click', closeDeleteConfirmModal);
+
             // Configuração Inicial
-            // (REMOVIDO) initDarkMode();
             initFormVisibility();
             loadTasks(); // Isso chama renderTasks()
+            loadDeletedTasks(); // (NOVO) Isso chama renderDeletedTasks()
+            checkRecurringTasks(); // (NOVO) Verifica recorrências
             initSortable();
 
             // (MODIFICADO) Renderiza todos os ícones estáticos (cabeçalho, etc) via JS
             renderStaticIcons();
         }
 
-        // (NOVO) Função para injetar SVGs estáticos
+        // (MODIFICADO) Função para injetar SVGs estáticos
         function renderStaticIcons() {
             document.getElementById('logo-icon-placeholder').innerHTML = getIcon('logo');
             document.getElementById('import-icon-placeholder').innerHTML = getIcon('fileUp');
@@ -1293,6 +1844,11 @@
             document.getElementById('completed-title-icon-placeholder').innerHTML = getIcon('titleCompleted');
             document.getElementById('completed-arrow-icon-placeholder').innerHTML = getIcon('chevronDown');
             document.getElementById('modal-close-icon-placeholder').innerHTML = getIcon('close');
+
+            // (NOVO) Ícones da Lixeira e Modal de Confirmação
+            document.getElementById('deleted-title-icon-placeholder').innerHTML = getIcon('titleDeleted');
+            document.getElementById('deleted-arrow-icon-placeholder').innerHTML = getIcon('chevronDown');
+            document.getElementById('confirm-delete-icon-placeholder').innerHTML = getIcon('alertTriangle');
         }
 
 
