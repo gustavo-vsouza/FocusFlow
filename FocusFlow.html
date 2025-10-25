@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<!-- (MODIFICADO) 'dark' agora é permanente -->
+<html lang="pt-BR" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocoFlow - Seu Hub de Produtividade</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Estilos base para a aplicação */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+
+            /* (MODIFICADO) Fundo com gradiente sutil (Modo Escuro) */
+            background-color: #0d131f;
+            /* gray-950 */
+            background-image: radial-gradient(circle at 1% 1%, #0c4a6e, #0d131f 90%);
+        }
+
+        /* Gradiente da marca */
+        .brand-gradient {
+            background-image: linear-gradient(to right, #2563EB, #3B82F6);
+            transition: all 0.3s ease-in-out;
+        }
+
+        .brand-gradient:hover {
+            box-shadow: 0 4px 15px -3px rgba(59, 130, 246, 0.4);
+            filter: brightness(1.1);
+        }
+
+        .brand-gradient-text {
+            background-image: linear-gradient(to right, #3B82F6, #60A5FA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* (MODIFICADO) Estilo "Glassmorphism" para painéis */
+        .panel {
+            background-color: rgba(31, 41, 55, 0.8);
+            /* gray-800/80 */
+            border: 1px solid rgba(55, 65, 81, 0.7);
+            /* gray-700/70 */
+        }
+
+        /* (MODIFICADO) Card de Tarefa */
+        .task-card {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid rgba(55, 65, 81, 0.7);
+            /* gray-700/70 */
+            background-color: rgba(31, 41, 55, 0.9);
+            /* gray-800/90 */
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+        }
+
+        /* (MODIFICADO) Estilos para Drag and Drop */
+        .drag-handle {
+            cursor: move;
+        }
+
+        .sortable-ghost {
+            opacity: 0.4;
+            background-color: #1e3a8a;
+            /* Estilo escuro */
+        }
+
+        .sortable-chosen {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: scale(1.02);
+            background-color: #1f2937;
+            /* Estilo escuro (gray-800) */
+        }
+
+        /* Oculta ícone de calendário padrão */
+        .due-date-input::-webkit-calendar-picker-indicator {
+            display: none;
+            -webkit-appearance: none;
+        }
+
+        /* Animações do Toast */
+        @keyframes toast-in {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes toast-out {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
+
+        .toast-in {
+            animation: toast-in 0.3s ease-out forwards;
+        }
+
+        .toast-out {
+            animation: toast-out 0.3s ease-in forwards;
+        }
+
+        /* (MODIFICADO) Estilização do Checkbox */
+        .custom-checkbox-container {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        .custom-checkbox-visual {
+            display: inline-block;
+        }
+
+        .custom-checkbox-input:checked+.custom-checkbox-visual {
+            background-color: #3B82F6;
+            border-color: #3B82F6;
+        }
+
+        .custom-checkbox-input:checked+.custom-checkbox-visual::after {
+            content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l4 4L16 6" /></svg>');
+            display: block;
+            width: 100%;
+            height: 100%;
+            transform: scale(0.9);
+            animation: pop-in 0.15s ease-out;
+        }
+
+        @keyframes pop-in {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(0.9);
+                opacity: 1;
+            }
+        }
+
+        .custom-checkbox-input:focus-visible+.custom-checkbox-visual {
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+            outline: 2px solid transparent;
+        }
+
+        /* Estilos do Modal de Notas */
+        .modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        /* Ajuste no ícone de expandir/recolher */
+        details[open] .details-arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Estilo para ícones de ação */
+        .task-action-btn {
+            transition: all 0.15s ease-in-out;
+        }
+
+        .task-action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* (NOVO) Classe genérica para ícones SVG */
+        .svg-icon {
+            width: 1.25rem;
+            /* 20px (w-5) */
+            height: 1.25rem;
+            /* 20px (h-5) */
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .svg-icon-sm {
+            width: 1rem;
+            /* 16px (w-4) */
+            height: 1rem;
+            /* 16px (h-4) */
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .svg-icon-lg {
+            width: 1.75rem;
+            /* 28px (w-7) */
+            height: 1.75rem;
+            /* 28px (h-7) */
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+
+    <!-- (REMOVIDO) Bloco tailwind.config obsoleto -->
+</head>
+
+<!-- (MODIFICADO) Classes de body simplificadas para dark mode -->
+
+<body class="text-gray-100 min-h-screen transition-colors duration-200">
+
+    <!-- Container Principal -->
+    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- Cabeçalho -->
+        <header class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <!-- Logo e Título -->
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 brand-gradient rounded-lg shadow-lg">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="logo-icon-placeholder"></span>
+                </div>
+                <!-- (MODIFICADO) Cor do texto simplificada -->
+                <h1 class="text-3xl font-bold text-white">
+                    Foco<span class="brand-gradient-text">Flow</span>
+                </h1>
+                <!-- (MODIFICADO) Cor do texto simplificada -->
+                <span class="text-sm text-gray-400 font-medium">v1.6</span>
+            </div>
+
+            <!-- Controles do Cabeçalho -->
+            <div class="flex items-center gap-2 sm:gap-4">
+
+                <!-- (MODIFICADO) Botão de Importar simplificado -->
+                <label for="file-import"
+                    class="relative cursor-pointer px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
+                    title="Importar .xlsx">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="import-icon-placeholder"></span>
+                    <input type="file" id="file-import" accept=".xlsx" class="sr-only">
+                </label>
+
+                <!-- (MODIFICADO) Botão de Exportar simplificado -->
+                <button id="export-button"
+                    class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
+                    title="Exportar .xlsx">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="export-icon-placeholder"></span>
+                </button>
+
+                <!-- (MODIFICADO) Botão de Ocultar/Exibir simplificado -->
+                <button id="toggle-form-button"
+                    class="px-3 py-2 text-sm font-medium text-gray-300 bg-gray-800 rounded-md border border-gray-700 hover:bg-gray-700 shadow-sm transition-colors"
+                    title="Ocultar formulário">
+                    <!-- O ícone será definido pelo JS -->
+                </button>
+
+                <!-- (REMOVIDO) Seletor de Modo Escuro -->
+            </div>
+        </header>
+
+        <!-- Formulário de Adição de Tarefa -->
+        <form id="add-task-form" class="panel mb-6 p-4 rounded-lg shadow-lg">
+            <h2 class="text-xl font-semibold mb-4 text-white">Adicionar Nova Demanda</h2>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <!-- (MODIFICADO) Input Principal simplificado -->
+                <div class="flex-grow">
+                    <label for="task-text" class="sr-only">Descrição da Demanda</label>
+                    <input type="text" id="task-text" placeholder="Qual é a nova demanda?"
+                        class="w-full px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px]">
+                </div>
+
+                <!-- (MODIFICADO) Seletor de Prioridade simplificado -->
+                <div class="flex-shrink-0">
+                    <label for="task-priority" class="sr-only">Prioridade</label>
+                    <select id="task-priority"
+                        class="w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px]">
+                        <option value="alta">Prioridade: Alta</option>
+                        <option value="media" selected>Prioridade: Média</option>
+                        <option value="baixa">Prioridade: Baixa</option>
+                    </select>
+                </div>
+
+                <!-- (MODIFICADO) Seletor de Data simplificado -->
+                <div class="flex-shrink-0">
+                    <label for="task-due-date" class="sr-only">Data de Vencimento</label>
+                    <input type="date" id="task-due-date" title="Data de Vencimento"
+                        class="w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px] text-gray-300">
+                </div>
+            </div>
+
+            <!-- Botões de Adicionar -->
+            <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                <!-- (MODIFICADO) Botão Primário simplificado -->
+                <button type="submit" data-list="focus"
+                    class="brand-gradient flex-1 flex justify-center items-center gap-2 px-5 py-3 rounded-md text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all h-[50px]">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="focus-add-icon-placeholder"></span>
+                    Adicionar ao Foco do Dia
+                </button>
+                <!-- (MODIFICADO) Botão Secundário simplificado -->
+                <button type="submit" data-list="backlog"
+                    class="flex-1 flex justify-center items-center gap-2 px-5 py-3 rounded-md bg-gray-700 border border-gray-600 text-white font-semibold shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all h-[50px]">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="backlog-add-icon-placeholder"></span>
+                    Salvar no Backlog
+                </button>
+            </div>
+        </form>
+
+        <!-- Colunas de Tarefas -->
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+            <!-- Coluna: Foco do Dia -->
+            <section id="focus-section">
+                <div class="flex justify-between items-center mb-4">
+                    <!-- (MODIFICADO) Cor do texto simplificada -->
+                    <h2 class="text-2xl font-bold flex items-center gap-2 text-white">
+                        <!-- (MODIFICADO) Ícone SVG inline -->
+                        <span id="focus-title-icon-placeholder"></span>
+                        Foco do Dia
+                    </h2>
+                    <!-- (MODIFICADO) Cor do ícone simplificada -->
+                    <button id="reset-focus-button" class="p-2 text-gray-400 hover:text-blue-400 transition-colors"
+                        title="Resetar Tarefas Concluídas do Dia">
+                        <!-- Icon: Reset (definido por JS) -->
+                    </button>
+                </div>
+                <div id="focus-list" class="task-list space-y-3 min-h-[200px] p-2 panel rounded-lg">
+                    <!-- Cards do Foco do Dia serão inseridos aqui -->
+                </div>
+            </section>
+
+            <!-- Coluna: Backlog -->
+            <section id="backlog-section">
+                <!-- (MODIFICADO) Cor do texto simplificada -->
+                <h2 class="text-2xl font-bold flex items-center gap-2 mb-4 text-white">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="backlog-title-icon-placeholder"></span>
+                    Backlog
+                </h2>
+                <div id="backlog-list" class="task-list space-y-3 min-h-[200px] p-2 panel rounded-lg">
+                    <!-- Cards do Backlog serão inseridos aqui -->
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Seção: Tarefas Concluídas (do Backlog) -->
+        <section id="completed-section" class="mt-8">
+            <details class="panel rounded-lg shadow-sm overflow-hidden">
+                <!-- (MODIFICADO) Cores simplificadas -->
+                <summary
+                    class="p-4 cursor-pointer flex justify-between items-center text-lg font-semibold text-green-400 hover:bg-gray-700/50 transition-colors">
+                    <span class="flex items-center gap-2">
+                        <!-- (MODIFICADO) Ícone SVG inline -->
+                        <span id="completed-title-icon-placeholder"></span>
+                        Tarefas Concluídas (Backlog)
+                    </span>
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="completed-arrow-icon-placeholder" class="transition-transform details-arrow"></span>
+                </summary>
+                <!-- (MODIFICADO) Cor da borda simplificada -->
+                <div id="completed-list" class="p-4 border-t border-gray-700 space-y-3">
+                    <!-- Cards Concluídos (do Backlog) serão inseridos aqui -->
+                </div>
+            </details>
+        </section>
+
+    </div> <!-- Fim do Container Principal -->
+
+    <!-- (Toast) Notificação Global -->
+    <div id="toast-notification"
+        class="fixed bottom-8 right-8 p-4 rounded-lg shadow-xl text-white max-w-sm z-50 transition-all duration-300 translate-y-full opacity-0"
+        style="display: none;">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Modal de Notas -->
+    <div id="notes-modal" class="fixed inset-0 z-40 flex items-center justify-center p-4 hidden">
+        <!-- Backdrop -->
+        <div id="notes-modal-backdrop" class="modal-backdrop fixed inset-0 transition-opacity opacity-0"
+            style="display: none;"></div>
+
+        <!-- (MODIFICADO) Conteúdo do Modal simplificado -->
+        <div id="notes-modal-content"
+            class="relative z-50 w-full max-w-lg bg-gray-800 rounded-lg shadow-2xl p-6 transition-all transform scale-95 opacity-0"
+            style="display: none;">
+            <!-- Cabeçalho do Modal -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-white">Notas da Demanda</h3>
+                <!-- (MODIFICADO) Botão de fechar simplificado -->
+                <button id="notes-modal-close" class="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white"
+                    title="Fechar">
+                    <!-- (MODIFICADO) Ícone SVG inline -->
+                    <span id="modal-close-icon-placeholder"></span>
+                </button>
+            </div>
+
+            <!-- Formulário do Modal -->
+            <form id="notes-modal-form">
+                <input type="hidden" id="notes-modal-task-id">
+                <!-- (MODIFICADO) Texto da Tarefa simplificado -->
+                <p class="mb-4 p-3 bg-gray-700 rounded-md text-gray-200" id="notes-modal-task-text"></p>
+
+                <!-- (MODIFICADO) Label simplificado -->
+                <label for="notes-modal-textarea" class="block text-sm font-medium text-gray-400 mb-2">
+                    Detalhes e Notas:
+                </label>
+                <!-- (MODIFICADO) Textarea simplificado -->
+                <textarea id="notes-modal-textarea" rows="8"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Adicione detalhes, links, ou qualquer outra informação aqui..."></textarea>
+
+                <!-- (MODIFICADO) Botão Salvar simplificado -->
+                <div class="mt-6 flex justify-end">
+                    <button type="submit"
+                        class="brand-gradient px-5 py-2.5 rounded-md text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all">
+                        Salvar Notas
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Constantes da Aplicação ---
+        const LOCAL_STORAGE_KEY = 'focoflow-tasks';
+        const FORM_VISIBLE_KEY = 'focoflow-form-visible';
+        const TODAY_NORM = new Date();
+        TODAY_NORM.setHours(0, 0, 0, 0);
+
+
+        // --- Globais da Aplicação ---
+        let localTasks = [];
+        let toastTimeout = null;
+
+        // --- Elementos da DOM ---
+        const addTaskForm = document.getElementById('add-task-form');
+        const taskTextInput = document.getElementById('task-text');
+        const taskPriorityInput = document.getElementById('task-priority');
+        const taskDueDateInput = document.getElementById('task-due-date');
+        const focusList = document.getElementById('focus-list');
+        const backlogList = document.getElementById('backlog-list');
+        const completedList = document.getElementById('completed-list');
+        // (REMOVIDO) Elementos do Dark Mode
+        const resetFocusButton = document.getElementById('reset-focus-button');
+        const exportButton = document.getElementById('export-button');
+        const importInput = document.getElementById('file-import');
+        const toggleFormButton = document.getElementById('toggle-form-button');
+        const toast = document.getElementById('toast-notification');
+        const toastMessage = document.getElementById('toast-message');
+
+        // Elementos do Modal de Notas
+        const notesModal = document.getElementById('notes-modal');
+        const notesModalBackdrop = document.getElementById('notes-modal-backdrop');
+        const notesModalContent = document.getElementById('notes-modal-content');
+        const notesModalCloseBtn = document.getElementById('notes-modal-close');
+        const notesModalForm = document.getElementById('notes-modal-form');
+        const notesModalTaskId = document.getElementById('notes-modal-task-id');
+        const notesModalTaskText = document.getElementById('notes-modal-task-text');
+        const notesModalTextarea = document.getElementById('notes-modal-textarea');
+
+
+        // --- (MODIFICADO) Dicionário de Ícones (agora usa SVG Inline) ---
+        function getIcon(name) {
+            const icons = {
+                // Ícones de 20x20 (w-5, h-5)
+                'delete': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 5v6m4-6v6"/></svg>',
+                'reopen': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M1 4v6h6m-3.5 10a9 9 0 1 0-2.12-6.38L1 14"/></svg>',
+                'moveToFocus': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>',
+                'moveToBacklog': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><rect x="1" y="4" width="22" height="5" rx="2" ry="2"/><path d="M2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9"/><path d="M10 14h4"/></svg>',
+                'reset': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5m13 1a9 9 0 0 0-9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M21 21v-5h-5"/></svg>',
+                'dragHandle': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>',
+                'notes': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></svg>',
+                'notesFilled': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" fill="currentColor"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></svg>',
+                'eye': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+                'eyeSlash': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>',
+                'fileUp': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 12v6m-3-3 3-3 3 3"/></svg>',
+                'fileDown': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6m-3 3 3 3 3-3"/></svg>',
+                'chevronDown': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="m6 9 6 6 6-6"/></svg>',
+                'close': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+
+                // Ícones de 16x16 (w-4, h-4)
+                'calendar': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
+                'alert': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+
+                // Ícones de 28x28 (w-7, h-7)
+                'logo': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-lg" stroke="white"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+                'titleSun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-lg text-blue-500"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41m11.32-11.32l1.41-1.41"/></svg>',
+                'titleArchive': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-lg text-gray-500"><rect x="1" y="4" width="22" height="5" rx="2" ry="2"/><path d="M2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9"/><path d="M10 14h4"/></svg>',
+
+                // Ícones de 24x24 (w-6, h-6)
+                'titleCompleted': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon" style="width: 1.5rem; height: 1.5rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+
+            };
+            return icons[name] || '';
+        }
+
+        // --- Funções de Texto e Status ---
+        function getPriorityText(priority) {
+            const map = { alta: 'Alta', media: 'Média', baixa: 'Baixa' };
+            return map[priority] || 'Média';
+        }
+
+        function getStatusText(status) {
+            return status === 'completed' ? 'Concluído' : 'Pendente';
+        }
+
+        function getPriorityFromText(text) {
+            const lowerText = text ? text.toLowerCase() : '';
+            if (lowerText.includes('alta')) return 'alta';
+            if (lowerText.includes('baixa')) return 'baixa';
+            return 'media';
+        }
+
+        function getStatusFromText(text) {
+            const lowerText = text ? text.toLowerCase() : '';
+            return lowerText.includes('concluído') ? 'completed' : 'pending';
+        }
+
+        function escapeAttr(str) {
+            if (typeof str !== 'string') return '';
+            return str.replace(/"/g, '&quot;');
+        }
+
+        // --- Funções de Ajuda de UI ---
+
+        /** (MODIFICADO) Retorna classes e ícone para o indicador de data */
+        function getDueDateIndicator(dueDateString) {
+            if (!dueDateString) {
+                return {
+                    classes: 'text-gray-500',
+                    icon: getIcon('calendar')
+                };
+            }
+            const dateParts = dueDateString.split('-').map(Number);
+            const dueDateNorm = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            const timeDiff = dueDateNorm.getTime() - TODAY_NORM.getTime();
+            const dayDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+            if (dayDiff < 0) {
+                return { classes: 'text-red-400', icon: getIcon('alert') };
+            }
+            if (dayDiff === 0) {
+                return { classes: 'text-yellow-400', icon: getIcon('calendar') };
+            }
+            if (dayDiff === 1) {
+                return { classes: 'text-blue-400', icon: getIcon('calendar') };
+            }
+            return { classes: 'text-gray-400', icon: getIcon('calendar') };
+        }
+
+        /** (MODIFICADO) Retorna as classes de cor do Tailwind para cada prioridade */
+        function getPriorityClasses(priority) {
+            switch (priority) {
+                case 'alta':
+                    return {
+                        badge: 'bg-red-900/70 text-red-200',
+                        dot: 'bg-red-500'
+                    };
+                case 'media':
+                    return {
+                        badge: 'bg-yellow-900/70 text-yellow-200',
+                        dot: 'bg-yellow-500'
+                    };
+                case 'baixa':
+                    return {
+                        badge: 'bg-blue-900/70 text-blue-200',
+                        dot: 'bg-blue-500'
+                    };
+                default:
+                    return {
+                        badge: 'bg-gray-700 text-gray-200',
+                        dot: 'bg-gray-400'
+                    };
+            }
+        }
+
+        /** (Toast) Mostra uma notificação global */
+        function showToast(message, type = 'success') {
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastMessage.textContent = message;
+            toast.classList.remove('bg-green-600', 'bg-red-600', 'bg-blue-600');
+            if (type === 'error') {
+                toast.classList.add('bg-red-600');
+            } else if (type === 'info') {
+                toast.classList.add('bg-blue-600');
+            } else {
+                toast.classList.add('bg-green-600');
+            }
+            toast.style.display = 'block';
+            toast.classList.remove('toast-out', 'translate-y-full', 'opacity-0');
+            toast.classList.add('toast-in');
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('toast-in');
+                toast.classList.add('toast-out');
+                setTimeout(() => { toast.style.display = 'none'; }, 300);
+            }, 3000);
+        }
+
+        // --- Renderização ---
+
+        /** Renderiza todas as listas de tarefas */
+        function renderTasks() {
+            focusList.innerHTML = '';
+            backlogList.innerHTML = '';
+            completedList.innerHTML = '';
+
+            const focusTasks = localTasks.filter(t => t.list === 'focus' && t.status === 'pending');
+            const focusCompletedTasks = localTasks.filter(t => t.list === 'focus' && t.status === 'completed');
+            const backlogTasks = localTasks.filter(t => t.list === 'backlog' && t.status === 'pending');
+            const backlogCompletedTasks = localTasks.filter(t => t.list === 'backlog' && t.status === 'completed');
+
+            const sortedFocusTasks = [
+                ...focusTasks.sort((a, b) => (a.order || 0) - (b.order || 0)),
+                ...focusCompletedTasks.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0))
+            ];
+
+            if (sortedFocusTasks.length === 0) {
+                focusList.innerHTML = '<p class="text-sm text-center text-gray-400 py-4">Seu dia está limpo. Adicione tarefas aqui!</p>';
+            } else {
+                sortedFocusTasks.forEach(task => focusList.appendChild(createTaskCard(task)));
+            }
+
+            if (backlogTasks.length === 0) {
+                backlogList.innerHTML = '<p class="text-sm text-center text-gray-400 py-4">Backlog vazio.</p>';
+            } else {
+                backlogTasks
+                    .sort((a, b) => (a.order || 0) - (b.order || 0))
+                    .forEach(task => backlogList.appendChild(createTaskCard(task)));
+            }
+
+            if (backlogCompletedTasks.length === 0) {
+                completedList.innerHTML = '<p class="text-sm text-center text-gray-400 py-4">Nenhuma tarefa do backlog concluída.</p>';
+            } else {
+                backlogCompletedTasks
+                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+                    .forEach(task => completedList.appendChild(createTaskCard(task)));
+            }
+
+            resetFocusButton.innerHTML = getIcon('reset');
+            resetFocusButton.disabled = focusCompletedTasks.length === 0;
+            resetFocusButton.classList.toggle('opacity-50', focusCompletedTasks.length === 0);
+
+            // (REMOVIDO) Processa os ícones recém-criados
+            // lucide.createIcons();
+        }
+
+        /** (MODIFICADO) Cria o HTML para um único card de tarefa */
+        function createTaskCard(task) {
+            const { id, text, priority, status, list, dueDate, notes } = task;
+
+            const card = document.createElement('div');
+            card.className = `task-card flex items-center gap-3 p-3.5 rounded-lg shadow ${status === 'completed' ? 'opacity-60' : ''}`;
+            card.dataset.task = JSON.stringify(task);
+            card.dataset.taskId = id;
+
+            let actionsHtml = '';
+            const notesIcon = (notes && notes.trim() !== "") ? getIcon('notesFilled') : getIcon('notes');
+            const notesTitle = (notes && notes.trim() !== "") ? 'Ver/Editar Notas' : 'Adicionar Notas';
+            const notesIconClass = (notes && notes.trim() !== "") ? 'text-blue-400' : '';
+
+            if (status === 'pending') {
+                const moveAction = (list === 'focus') ? 'moveToBacklog' : 'moveToFocus';
+                actionsHtml = `
+                    <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
+                        <span class="${notesIconClass}">${notesIcon}</span>
+                    </button>
+                    <button class="task-action-btn" data-action="${moveAction}" title="${list === 'focus' ? 'Mover para Backlog' : 'Mover para Foco'}">
+                        ${getIcon(moveAction)}
+                    </button>
+                    <button class="task-action-btn" data-action="delete" title="Excluir Tarefa">
+                        ${getIcon('delete')}
+                    </button>
+                `;
+            } else if (list === 'backlog') {
+                actionsHtml = `
+                     <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
+                        <span class="${notesIconClass}">${notesIcon}</span>
+                    </button>
+                    <button class="task-action-btn" data-action="reopen" title="Reabrir Tarefa">
+                        ${getIcon('reopen')}
+                    </button>
+                    <button class="task-action-btn" data-action="delete" title="Excluir Tarefa">
+                        ${getIcon('delete')}
+                    </button>
+                `;
+            } else {
+                actionsHtml = `
+                    <button class="task-action-btn" data-action="open-notes" title="${notesTitle}">
+                        <span class="${notesIconClass}">${notesIcon}</span>
+                    </button>
+                `;
+            }
+
+            const dragHandleHtml = (status === 'pending') ?
+                `<span class="drag-handle flex-shrink-0 p-1 text-gray-500 hover:text-gray-200">
+                    ${getIcon('dragHandle')}
+                </span>` :
+                `<span class="flex-shrink-0 w-7"></span>`;
+
+            const priorityClasses = getPriorityClasses(priority);
+
+            card.innerHTML = `
+                ${dragHandleHtml}
+                <label class="custom-checkbox-container flex-shrink-0 relative flex items-center justify-center h-5 w-5 cursor-pointer" title="${status === 'completed' ? 'Marcar como pendente' : 'Concluir tarefa'}">
+                    <input type="checkbox" data-action="toggle-status" class="custom-checkbox-input absolute opacity-0 w-0 h-0" ${status === 'completed' ? 'checked' : ''}>
+                    <span class="custom-checkbox-visual w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded-md transition-all duration-200"></span>
+                </label>
+                
+                <div class="flex-grow min-w-0">
+                    <span class="task-text-display block w-full truncate cursor-pointer text-gray-100 ${status === 'completed' && list === 'focus' ? 'line-through' : ''}">${escapeAttr(text)}</span>
+                    <input type="text" class="task-edit-input hidden w-full px-2 py-1 rounded bg-gray-700 border border-blue-500 focus:outline-none" value="${escapeAttr(text)}">
+                </div>
+                
+                <div class="due-date-container flex-shrink-0 w-[120px] flex justify-end">
+                    ${createDueDateInput(dueDate)}
+                </div>
+
+                <span class="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${priorityClasses.badge}">
+                    <span class="h-2 w-2 rounded-full ${priorityClasses.dot}"></span>
+                    <span>${getPriorityText(priority)}</span>
+                </span>
+
+                <div class="task-actions flex-shrink-0 flex items-center gap-2 text-gray-400">
+                    ${actionsHtml}
+                </div>
+            `;
+
+            card.querySelectorAll('.task-action-btn').forEach(btn => {
+                btn.classList.add('p-1', 'rounded-md', 'hover:text-gray-200');
+            });
+
+            return card;
+        }
+
+        /** (MODIFICADO) Helper para criar o input de data ou o botão de adicionar data */
+        function createDueDateInput(dueDateString) {
+            if (dueDateString) {
+                const { classes, icon } = getDueDateIndicator(dueDateString);
+                return `
+                    <div class="due-date-wrapper relative flex items-center gap-1 ${classes} pr-2 rounded-md hover:bg-gray-700" title="Alterar data de vencimento">
+                        ${icon}
+                        <input 
+                            type="date" 
+                            value="${dueDateString}" 
+                            data-action="set-due-date" 
+                            class="due-date-input bg-transparent text-sm font-medium p-0 border-none focus:ring-0 appearance-none w-28 cursor-pointer"
+                            style="color: currentColor;"
+                        >
+                    </div>
+                `;
+            } else {
+                return `
+                    <button 
+                        class="due-date-add-btn p-2 rounded-md text-gray-500 hover:bg-gray-700 hover:text-blue-400 transition-colors"
+                        data-action="add-due-date"
+                        title="Adicionar data de vencimento"
+                    >
+                        ${getIcon('calendar')}
+                    </button>
+                `;
+            }
+        }
+
+
+        // --- Funções CRUD Locais ---
+
+        function loadTasks() {
+            try {
+                const tasksJson = localStorage.getItem(LOCAL_STORAGE_KEY);
+                localTasks = tasksJson ? JSON.parse(tasksJson) : [];
+                console.log("Tarefas carregadas:", localTasks.length);
+            } catch (e) {
+                console.error("Erro ao carregar tarefas:", e);
+                localTasks = [];
+                showToast("Erro ao carregar suas tarefas.", "error");
+            }
+            renderTasks();
+        }
+
+        function saveTasks() {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(localTasks));
+                console.log("Tarefas salvas.");
+            } catch (e) {
+                console.error("Erro ao salvar tarefas:", e);
+                showToast("Não foi possível salvar suas tarefas.", "error");
+            }
+        }
+
+        function handleAddTask(e) {
+            e.preventDefault();
+            const listType = e.submitter.dataset.list;
+            const text = taskTextInput.value.trim();
+            const priority = taskPriorityInput.value;
+            const dueDate = taskDueDateInput.value || null;
+
+            if (!text) {
+                taskTextInput.focus();
+                showToast("Por favor, insira a descrição da demanda.", "info");
+                return;
+            }
+
+            const now = Date.now();
+            const newTaskWithId = {
+                id: crypto.randomUUID(),
+                text: text,
+                priority: priority,
+                status: 'pending',
+                list: listType,
+                dueDate: dueDate,
+                notes: "",
+                createdAt: now,
+                order: now
+            };
+
+            localTasks.push(newTaskWithId);
+            saveTasks();
+            renderTasks();
+
+            taskTextInput.value = '';
+            taskPriorityInput.value = 'media';
+            taskDueDateInput.value = '';
+        }
+
+        function updateTask(id, updates) {
+            let taskIndex = localTasks.findIndex(t => t.id === id);
+            if (taskIndex > -1) {
+                localTasks[taskIndex] = { ...localTasks[taskIndex], ...updates };
+                saveTasks();
+                renderTasks();
+                console.log("Tarefa atualizada:", id, updates);
+            }
+        }
+
+        function deleteTask(id) {
+            localTasks = localTasks.filter(t => t.id !== id);
+            saveTasks();
+            renderTasks();
+            console.log("Tarefa excluída:", id);
+        }
+
+        function handleResetFocus() {
+            let tasksUpdated = false;
+            const now = Date.now();
+            localTasks.forEach((task, index) => {
+                if (task.list === 'focus' && task.status === 'completed') {
+                    task.status = 'pending';
+                    task.order = now + index;
+                    tasksUpdated = true;
+                }
+            });
+
+            if (tasksUpdated) {
+                saveTasks();
+                renderTasks();
+                showToast("Tarefas do dia resetadas!", "success");
+            } else {
+                showToast("Nenhuma tarefa concluída para resetar.", "info");
+            }
+        }
+
+        // --- Funções do Modal de Notas ---
+
+        function openNotesModal(task) {
+            notesModalTaskId.value = task.id;
+            notesModalTaskText.textContent = task.text;
+            notesModalTextarea.value = task.notes || "";
+
+            notesModal.classList.remove('hidden');
+            notesModalBackdrop.style.display = 'block';
+            notesModalContent.style.display = 'block';
+
+            void notesModalContent.offsetWidth;
+
+            notesModalBackdrop.classList.add('opacity-100');
+            notesModalContent.classList.remove('scale-95', 'opacity-0');
+            notesModalContent.classList.add('scale-100', 'opacity-100');
+
+            notesModalTextarea.focus();
+
+            // (REMOVIDO) Processa o ícone 'X' do modal
+            // lucide.createIcons();
+        }
+
+        function closeNotesModal() {
+            notesModalBackdrop.classList.remove('opacity-100');
+            notesModalContent.classList.remove('scale-100', 'opacity-100');
+            notesModalContent.classList.add('scale-95', 'opacity-0');
+
+            setTimeout(() => {
+                notesModal.classList.add('hidden');
+                notesModalBackdrop.style.display = 'none';
+                notesModalContent.style.display = 'none';
+                notesModalTaskId.value = "";
+                notesModalTaskText.textContent = "";
+                notesModalTextarea.value = "";
+            }, 200);
+        }
+
+        function handleSaveNotes(e) {
+            e.preventDefault();
+            const taskId = notesModalTaskId.value;
+            const newNotes = notesModalTextarea.value;
+
+            if (taskId) {
+                updateTask(taskId, { notes: newNotes });
+                showToast("Notas salvas com sucesso!", "success");
+            }
+            closeNotesModal();
+        }
+
+
+        // --- Manipuladores de Eventos (Clicks, Edição) ---
+
+        function handleListClick(e) {
+            const clickableElement = e.target.closest('button, input[type="checkbox"]');
+
+            if (e.target.closest('.drag-handle')) {
+                return;
+            }
+
+            if (!clickableElement) return;
+
+            const card = e.target.closest('.task-card');
+            if (!card) return;
+
+            const task = JSON.parse(card.dataset.task);
+            const action = clickableElement.dataset.action;
+
+            switch (action) {
+                case 'toggle-status':
+                    const newStatus = clickableElement.checked ? 'completed' : 'pending';
+                    updateTask(task.id, { status: newStatus });
+                    break;
+                case 'moveToFocus':
+                    updateTask(task.id, { list: 'focus', order: Date.now() });
+                    break;
+                case 'moveToBacklog':
+                    updateTask(task.id, { list: 'backlog', order: Date.now() });
+                    break;
+                case 'reopen':
+                    updateTask(task.id, { status: 'pending', order: Date.now() });
+                    break;
+                case 'add-due-date':
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    updateTask(task.id, { dueDate: todayStr });
+                    break;
+                case 'open-notes':
+                    openNotesModal(task);
+                    break;
+                case 'delete':
+                    console.warn(`Excluindo tarefa: ${task.text}`);
+                    deleteTask(task.id);
+                    break;
+            }
+        }
+
+        function handleListChange(e) {
+            const input = e.target;
+            if (input.dataset.action === 'set-due-date') {
+                const card = input.closest('.task-card');
+                if (!card) return;
+                const task = JSON.parse(card.dataset.task);
+                const newDate = input.value || null;
+                if (task.dueDate !== newDate) {
+                    updateTask(task.id, { dueDate: newDate });
+                }
+            }
+        }
+
+        function handleListDoubleClick(e) {
+            if (e.target.closest('.drag-handle, button, input, label')) {
+                return;
+            }
+
+            const textDisplay = e.target.closest('.task-text-display');
+            if (!textDisplay) return;
+
+            const card = textDisplay.closest('.task-card');
+            const editInput = card.querySelector('.task-edit-input');
+            const task = JSON.parse(card.dataset.task);
+
+            if (task.status === 'completed') {
+                return;
+            }
+
+            textDisplay.classList.add('hidden');
+            editInput.classList.remove('hidden');
+            editInput.focus();
+            editInput.select();
+        }
+
+        function handleEditCommit(e) {
+            if (e.target.classList.contains('task-edit-input')) {
+                if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== 'Escape') {
+                    return;
+                }
+                const card = e.target.closest('.task-card');
+                if (!card) return;
+                const task = JSON.parse(card.dataset.task);
+                const textDisplay = card.querySelector('.task-text-display');
+                const editInput = e.target;
+
+                if (e.key === 'Escape') {
+                    editInput.value = task.text;
+                } else {
+                    const newText = editInput.value.trim();
+                    if (newText && newText !== task.text) {
+                        updateTask(task.id, { text: newText });
+                        return;
+                    } else if (!newText) {
+                        editInput.value = task.text;
+                    }
+                }
+                editInput.classList.add('hidden');
+                textDisplay.classList.remove('hidden');
+            }
+        }
+
+        // --- Funções de Importar/Exportar (Excel) ---
+
+        function handleExport() {
+            if (localTasks.length === 0) {
+                showToast("Nenhuma tarefa para exportar.", "info");
+                return;
+            }
+            try {
+                const dataToExport = localTasks.map(task => ({
+                    status: getStatusText(task.status),
+                    demanda: task.text,
+                    prioridade: getPriorityText(task.priority),
+                    vencimento: task.dueDate || '',
+                    notas: task.notes || ''
+                }));
+                const ws = XLSX.utils.json_to_sheet(dataToExport);
+                ws['!cols'] = [
+                    { wch: 15 }, { wch: 60 }, { wch: 15 }, { wch: 12 }, { wch: 40 }
+                ];
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'TESTE');
+                XLSX.writeFile(wb, 'FocoFlow_Export.xlsx');
+                showToast("Tarefas exportadas com sucesso!", "success");
+            } catch (e) {
+                console.error("Erro ao exportar:", e);
+                showToast("Ocorreu um erro ao exportar o arquivo.", "error");
+            }
+        }
+
+        function handleImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = new Uint8Array(event.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = 'TESTE';
+                    if (!workbook.SheetNames.includes(sheetName)) {
+                        throw new Error(`Planilha "TESTE" não encontrada no arquivo.`);
+                    }
+                    const ws = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(ws, { raw: false });
+                    if (jsonData.length === 0) {
+                        showToast("Nenhuma tarefa encontrada na planilha 'TESTE'.", "info");
+                        return;
+                    }
+                    const newTasks = [];
+                    const now = Date.now();
+                    jsonData.forEach((row, index) => {
+                        const demanda = row['demanda'] || row['Demanda'];
+                        const statusRaw = row['status'] || row['Status'];
+                        const prioridadeRaw = row['prioridade'] || row['Prioridade'];
+                        const vencimentoRaw = row['vencimento'] || row['Vencimento'];
+                        const notasRaw = row['notas'] || row['Notas'];
+                        let vencimento = null;
+                        if (vencimentoRaw) {
+                            if (/^\d{4}-\d{2}-\d{2}$/.test(vencimentoRaw)) {
+                                vencimento = vencimentoRaw;
+                            } else if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(vencimentoRaw)) {
+                                try {
+                                    const d = new Date(vencimentoRaw);
+                                    vencimento = d.toISOString().split('T')[0];
+                                } catch (dateError) {
+                                    console.warn("Formato de data inválido:", vencimentoRaw);
+                                }
+                            }
+                        }
+                        if (demanda) {
+                            const status = getStatusFromText(statusRaw);
+                            const prioridade = getPriorityFromText(prioridadeRaw);
+                            const notas = (notasRaw || "").trim();
+                            newTasks.push({
+                                id: crypto.randomUUID(),
+                                text: demanda.trim(), priority: prioridade, status: status,
+                                list: status === 'completed' ? 'backlog' : 'focus',
+                                dueDate: vencimento, notes: notas, createdAt: now + index, order: now + index
+                            });
+                        }
+                    });
+                    if (newTasks.length > 0) {
+                        localTasks = [...localTasks, ...newTasks];
+                        saveTasks();
+                        renderTasks();
+                        showToast(`${newTasks.length} tarefas importadas com sucesso!`, "success");
+                    } else {
+                        showToast("A coluna 'demanda' não foi encontrada na planilha.", "info");
+                    }
+                } catch (e) {
+                    console.error("Erro ao importar:", e);
+                    showToast(e.message || "Erro ao ler o arquivo Excel.", "error");
+                } finally {
+                    e.target.value = null;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- (REMOVIDO) Funções do Modo Escuro ---
+
+
+        // --- Funções de Visibilidade do Formulário ---
+        function initFormVisibility() {
+            const userPref = localStorage.getItem(FORM_VISIBLE_KEY);
+            if (userPref === 'false') {
+                addTaskForm.classList.add('hidden');
+                toggleFormButton.innerHTML = getIcon('eye');
+                toggleFormButton.title = 'Mostrar formulário';
+            } else {
+                addTaskForm.classList.remove('hidden');
+                toggleFormButton.innerHTML = getIcon('eyeSlash');
+                toggleFormButton.title = 'Ocultar formulário';
+            }
+        }
+
+        function toggleAddTaskForm() {
+            const isHidden = addTaskForm.classList.toggle('hidden');
+            if (isHidden) {
+                localStorage.setItem(FORM_VISIBLE_KEY, 'false');
+                toggleFormButton.innerHTML = getIcon('eye');
+                toggleFormButton.title = 'Mostrar formulário';
+            } else {
+                localStorage.setItem(FORM_VISIBLE_KEY, 'true');
+                toggleFormButton.innerHTML = getIcon('eyeSlash');
+                toggleFormButton.title = 'Ocultar formulário';
+                taskTextInput.focus();
+            }
+            // (NOVO) Processa o ícone que acabou de ser trocado
+            lucide.createIcons();
+        }
+
+        // --- Inicialização do Drag and Drop (Sortable.js) ---
+        function initSortable() {
+            const listsToSort = [focusList, backlogList];
+            listsToSort.forEach(listElement => {
+                new Sortable(listElement, {
+                    animation: 150,
+                    handle: '.drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    chosenClass: 'sortable-chosen',
+                    filter: '.task-card[data-task*="\\"status\\":\\"completed\\""]',
+                    onEnd: (evt) => {
+                        const listId = evt.target.id;
+                        const listType = listId === 'focus-list' ? 'focus' : 'backlog';
+
+                        const cardElements = Array.from(evt.target.children)
+                            .filter(el => el.classList.contains('task-card'));
+                        const orderedIds = cardElements.map(el => el.dataset.taskId);
+
+                        const now = Date.now();
+                        let tasksUpdated = false;
+
+                        orderedIds.forEach((id, index) => {
+                            const taskIndex = localTasks.findIndex(t => t.id === id);
+                            if (taskIndex > -1 && (localTasks[taskIndex].list === listType || evt.from !== evt.to)) {
+                                localTasks[taskIndex].order = now + index;
+                                tasksUpdated = true;
+                            }
+                        });
+
+                        if (evt.from !== evt.to) {
+                            const taskId = evt.item.dataset.taskId;
+                            const newLocalListType = evt.to.id === 'focus-list' ? 'focus' : 'backlog';
+                            const taskIndex = localTasks.findIndex(t => t.id === taskId);
+                            if (taskIndex > -1) {
+                                localTasks[taskIndex].list = newLocalListType;
+                                tasksUpdated = true;
+                            }
+                        }
+
+                        if (tasksUpdated) {
+                            saveTasks();
+                            if (evt.from !== evt.to) {
+                                renderTasks();
+                            }
+                        }
+                    },
+                    group: 'shared-tasks'
+                });
+            });
+        }
+
+
+        // --- Inicialização da Aplicação ---
+        function initApp() {
+            console.log("Iniciando FocoFlow v1.6 (Dark Mode Only)...");
+
+            // Listeners Globais
+            addTaskForm.addEventListener('submit', handleAddTask);
+            // (REMOVIDO) Listener do Dark Mode
+            resetFocusButton.addEventListener('click', handleResetFocus);
+            exportButton.addEventListener('click', handleExport);
+            importInput.addEventListener('change', handleImport);
+            toggleFormButton.addEventListener('click', toggleAddTaskForm);
+
+            // Listeners das Listas (delegação)
+            focusList.addEventListener('click', handleListClick);
+            backlogList.addEventListener('click', handleListClick);
+            completedList.addEventListener('click', handleListClick);
+            focusList.addEventListener('change', handleListChange);
+            backlogList.addEventListener('change', handleListChange);
+            completedList.addEventListener('change', handleListChange);
+            focusList.addEventListener('dblclick', handleListDoubleClick);
+            backlogList.addEventListener('dblclick', handleListDoubleClick);
+            completedList.addEventListener('dblclick', handleListDoubleClick);
+            focusList.addEventListener('blur', handleEditCommit, true);
+            focusList.addEventListener('keydown', handleEditCommit, true);
+            backlogList.addEventListener('blur', handleEditCommit, true);
+            backlogList.addEventListener('keydown', handleEditCommit, true);
+            completedList.addEventListener('blur', handleEditCommit, true);
+            completedList.addEventListener('keydown', handleEditCommit, true);
+
+            // Listeners do Modal
+            notesModalCloseBtn.addEventListener('click', closeNotesModal);
+            notesModalBackdrop.addEventListener('click', closeNotesModal);
+            notesModalForm.addEventListener('submit', handleSaveNotes);
+
+            // Configuração Inicial
+            // (REMOVIDO) initDarkMode();
+            initFormVisibility();
+            loadTasks(); // Isso chama renderTasks()
+            initSortable();
+
+            // (MODIFICADO) Renderiza todos os ícones estáticos (cabeçalho, etc) via JS
+            renderStaticIcons();
+        }
+
+        // (NOVO) Função para injetar SVGs estáticos
+        function renderStaticIcons() {
+            document.getElementById('logo-icon-placeholder').innerHTML = getIcon('logo');
+            document.getElementById('import-icon-placeholder').innerHTML = getIcon('fileUp');
+            document.getElementById('export-icon-placeholder').innerHTML = getIcon('fileDown');
+            // O ícone 'toggle-form-button' é definido em initFormVisibility
+            document.getElementById('focus-add-icon-placeholder').innerHTML = getIcon('moveToFocus');
+            document.getElementById('backlog-add-icon-placeholder').innerHTML = getIcon('moveToBacklog');
+            document.getElementById('focus-title-icon-placeholder').innerHTML = getIcon('titleSun');
+            document.getElementById('backlog-title-icon-placeholder').innerHTML = getIcon('titleArchive');
+            document.getElementById('completed-title-icon-placeholder').innerHTML = getIcon('titleCompleted');
+            document.getElementById('completed-arrow-icon-placeholder').innerHTML = getIcon('chevronDown');
+            document.getElementById('modal-close-icon-placeholder').innerHTML = getIcon('close');
+        }
+
+
+        // Inicia a aplicação
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+
+</body>
+
+</html>
