@@ -236,6 +236,7 @@
             stroke-linejoin: round;
         }
 
+
         .svg-icon-lg {
             width: 1.75rem;
             /* 28px (w-7) */
@@ -246,6 +247,29 @@
             fill: none;
             stroke-linecap: round;
             stroke-linejoin: round;
+        }
+
+        /* (NOVO) Estilos para abas do modal de recorrência */
+        .recurrence-tab {
+            transition: all 0.2s ease-in-out;
+        }
+
+        .recurrence-tab[data-active="true"] {
+            background-color: #3B82F6;
+            color: #FFFFFF;
+        }
+
+        .recurrence-tab[data-active="false"]:hover {
+            background-color: #374151;
+            /* gray-700 */
+        }
+
+        .recurrence-content {
+            display: none;
+        }
+
+        .recurrence-content[data-active="true"] {
+            display: block;
         }
     </style>
 </head>
@@ -270,7 +294,7 @@
                     Foco<span class="brand-gradient-text">Flow</span>
                 </h1>
                 <!-- (MODIFICADO) Cor do texto simplificada -->
-                <span class="text-sm text-gray-400 font-medium">v2.1</span> <!-- (MODIFICADO) Versão -->
+                <span class="text-sm text-gray-400 font-medium">v2.3</span> <!-- (MODIFICADO) Versão -->
             </div>
 
             <!-- Controles do Cabeçalho -->
@@ -326,23 +350,21 @@
                     </select>
                 </div>
 
-                <!-- (NOVO) Seletor de Recorrência -->
+                <!-- (MODIFICADO) Botão de Recorrência -->
                 <div class="flex-shrink-0">
-                    <label for="task-recurrence" class="sr-only">Recorrência</label>
-                    <select id="task-recurrence"
-                        class="w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px]">
-                        <option value="none" selected>Recorrência: Nenhuma</option>
-                        <option value="daily">Recorrência: Diária</option>
-                        <option value="weekly">Recorrência: Semanal</option>
-                        <option value="monthly">Recorrência: Mensal</option>
-                    </select>
+                    <button type="button" id="open-recurrence-btn"
+                        class="w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px] flex items-center justify-center gap-2 text-gray-300 hover:bg-gray-600"
+                        title="Definir Recorrência">
+                        <span id="form-recurrence-icon-placeholder"></span>
+                        <span id="form-recurrence-text" class="whitespace-nowrap">Recorrência</span>
+                    </button>
                 </div>
 
-                <!-- (MODIFICADO) Seletor de Data simplificado -->
-                <div class="flex-shrink-0">
+
+                <div class="flex-shrink-0 relative">
                     <label for="task-due-date" class="sr-only">Data de Vencimento</label>
                     <input type="date" id="task-due-date" title="Data de Vencimento"
-                        class="w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px] text-gray-300">
+                        class="due-date-input w-full sm:w-auto px-4 py-3 rounded-md bg-gray-700 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 h-[50px] text-gray-300">
                 </div>
             </div>
 
@@ -506,18 +528,17 @@
                     <option value="baixa">Baixa</option>
                 </select>
 
-                <!-- (NOVO) Label para Recorrência -->
-                <label for="notes-modal-recurrence" class="block text-sm font-medium text-gray-400 mb-2 mt-4">
+                <!-- (MODIFICADO) Seção de Recorrência (agora é um botão) -->
+                <label for="notes-modal-open-recurrence-btn" class="block text-sm font-medium text-gray-400 mb-2 mt-4">
                     Recorrência:
                 </label>
-                <!-- (NOVO) Seletor de Recorrência no Modal -->
-                <select id="notes-modal-recurrence"
-                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="none">Nenhuma</option>
-                    <option value="daily">Diária</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="monthly">Mensal</option>
-                </select>
+                <button type="button" id="notes-modal-open-recurrence-btn"
+                    class="w-full p-3 rounded-md bg-gray-900 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex items-center justify-between text-gray-300 hover:bg-gray-700">
+                    <span id="notes-modal-recurrence-text">Nenhuma</span>
+                    <span id="notes-modal-recurrence-icon-placeholder" class="text-gray-400"></span>
+                </button>
+
+                <!-- (REMOVIDO) O <select id="notes-modal-recurrence"> foi removido -->
 
                 <!-- (MODIFICADO) Label simplificado -->
                 <label for="notes-modal-textarea" class="block text-sm font-medium text-gray-400 mb-2 mt-4">
@@ -538,6 +559,119 @@
             </form>
         </div>
     </div>
+
+    <!-- (NOVO) Modal de Recorrência -->
+    <div id="recurrence-modal" class="fixed inset-0 z-40 flex items-center justify-center p-4 hidden">
+        <!-- Backdrop -->
+        <div id="recurrence-modal-backdrop" class="modal-backdrop fixed inset-0 transition-opacity opacity-0"
+            style="display: none;"></div>
+
+        <!-- Conteúdo do Modal -->
+        <div id="recurrence-modal-content"
+            class="relative z-50 w-full max-w-lg bg-gray-800 rounded-lg shadow-2xl p-6 modal-content-enter"
+            style="display: none;">
+
+            <!-- Cabeçalho do Modal -->
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-white">Definir Recorrência</h3>
+                <button id="recurrence-modal-close"
+                    class="p-1 rounded-full text-gray-400 hover:bg-gray-700 hover:text-white" title="Fechar">
+                    <!-- Ícone de Fechar (definido por JS) -->
+                    <span id="recurrence-modal-close-icon-placeholder"></span>
+                </button>
+            </div>
+
+            <!-- Corpo do Modal -->
+            <div>
+                <!-- Abas de Navegação -->
+                <div class="flex border-b border-gray-700 mb-4">
+                    <button data-tab="none"
+                        class="recurrence-tab px-4 py-2 text-sm font-medium text-gray-300 border-b-2 border-transparent"
+                        data-active="true">Nenhuma</button>
+                    <button data-tab="daily"
+                        class="recurrence-tab px-4 py-2 text-sm font-medium text-gray-300 border-b-2 border-transparent">Diária</button>
+                    <button data-tab="weekly"
+                        class="recurrence-tab px-4 py-2 text-sm font-medium text-gray-300 border-b-2 border-transparent">Semanal</button>
+                    <button data-tab="monthly"
+                        class="recurrence-tab px-4 py-2 text-sm font-medium text-gray-300 border-b-2 border-transparent">Mensal</button>
+                    <button data-tab="scheduled"
+                        class="recurrence-tab px-4 py-2 text-sm font-medium text-gray-300 border-b-2 border-transparent">Programada</button>
+                </div>
+
+                <!-- Conteúdo das Abas -->
+                <div class="min-h-[200px] p-2">
+                    <!-- Nenhuma -->
+                    <div id="recurrence-content-none" class="recurrence-content" data-active="true">
+                        <p class="text-gray-300">A tarefa não se repetirá.</p>
+                    </div>
+
+                    <!-- Diária -->
+                    <div id="recurrence-content-daily" class="recurrence-content">
+                        <p class="text-gray-300">A tarefa se repetirá <span class="font-bold">todos os dias</span> a
+                            partir da data de vencimento.</p>
+                    </div>
+
+                    <!-- Semanal (MODIFICADO) -->
+                    <div id="recurrence-content-weekly" class="recurrence-content">
+                        <p class="text-gray-300 mb-4">Repetir nos dias:</p>
+                        <div class="grid grid-cols-4 gap-2">
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="1"> Seg</label>
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="2"> Ter</label>
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="3"> Qua</label>
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="4"> Qui</label>
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="5"> Sex</label>
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="6"> Sáb</label>
+                            <label class="flex items-center gap-2 p-2 bg-gray-700 rounded-md"><input type="checkbox"
+                                    class="weekday-checkbox form-checkbox rounded bg-gray-800 border-gray-600 text-blue-500"
+                                    data-day="0"> Dom</label>
+                        </div>
+                    </div>
+
+                    <!-- Mensal (MODIFICADO) -->
+                    <div id="recurrence-content-monthly" class="recurrence-content">
+                        <div class="flex items-center gap-2">
+                            <label class="text-gray-300">Repetir no dia:</label>
+                            <input type="number" id="recurrence-monthly-day" min="1" max="31" value="1"
+                                class="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded-md">
+                        </div>
+                        <p class="text-sm text-gray-400 mt-2">Se o dia não existir no mês (ex: dia 31 em Fev), a tarefa
+                            será agendada para o último dia daquele mês.</p>
+                    </div>
+
+                    <!-- Programada (MODIFICADO) -->
+                    <div id="recurrence-content-scheduled" class="recurrence-content">
+                        <div class="flex items-center gap-2">
+                            <label class="text-gray-300">Repetir a cada:</label>
+                            <input type="number" id="recurrence-scheduled-days" min="1" value="5"
+                                class="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded-md">
+                            <span class="text-gray-300">dias</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rodapé do Modal -->
+            <div class="mt-6 flex justify-end">
+                <button type="button" id="save-recurrence-btn"
+                    class="brand-gradient px-5 py-2.5 rounded-md text-white font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-800 transition-all">
+                    Salvar Recorrência
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- (NOVO) Modal de Confirmação de Exclusão -->
     <div id="confirm-delete-modal" class="fixed inset-0 z-40 flex items-center justify-center p-4 hidden">
@@ -597,25 +731,32 @@
         let localDeletedTasks = []; // (NOVO)
         let toastTimeout = null;
         let taskToModify = null; // (NOVO) Guarda o ID da tarefa para modais
+        // (MODIFICADO) Padrão do objeto de recorrência (agora é o 'staging' do form principal)
+        let currentRecurrenceData = { type: 'none' };
+        // (NOVO) Variáveis para o modal de edição
+        let taskBeingEdited = null; // Guarda o objeto da tarefa em edição
+        let recurrenceModalSource = 'main-form'; // 'main-form' ou 'edit-modal'
 
 
         // --- Elementos da DOM ---
         const addTaskForm = document.getElementById('add-task-form');
         const taskTextInput = document.getElementById('task-text');
         const taskPriorityInput = document.getElementById('task-priority');
-        const taskRecurrenceInput = document.getElementById('task-recurrence'); // (NOVO)
         const taskDueDateInput = document.getElementById('task-due-date');
         const focusList = document.getElementById('focus-list');
         const backlogList = document.getElementById('backlog-list');
         const completedList = document.getElementById('completed-list');
         const deletedList = document.getElementById('deleted-list'); // (NOVO)
-        // (REMOVIDO) Elementos do Dark Mode
         const resetFocusButton = document.getElementById('reset-focus-button');
         const exportButton = document.getElementById('export-button');
         const importInput = document.getElementById('file-import');
         const toggleFormButton = document.getElementById('toggle-form-button');
         const toast = document.getElementById('toast-notification');
         const toastMessage = document.getElementById('toast-message');
+
+        // (NOVO) Elementos do formulário
+        const openRecurrenceBtn = document.getElementById('open-recurrence-btn');
+        const formRecurrenceText = document.getElementById('form-recurrence-text');
 
         // Elementos do Modal de Notas
         const notesModal = document.getElementById('notes-modal');
@@ -627,7 +768,23 @@
         const notesModalTaskText = document.getElementById('notes-modal-task-text'); // (MODIFICADO) Agora é um <input>
         const notesModalTextarea = document.getElementById('notes-modal-textarea');
         const notesModalPriority = document.getElementById('notes-modal-priority'); // (NOVO) Seletor de prioridade do modal
-        const notesModalRecurrence = document.getElementById('notes-modal-recurrence'); // (NOVO) Seletor de recorrência do modal
+        // (REMOVIDO) const notesModalRecurrence = document.getElementById('notes-modal-recurrence');
+        // (NOVO) Botão de recorrência do modal de edição
+        const notesModalOpenRecurrenceBtn = document.getElementById('notes-modal-open-recurrence-btn');
+
+        // (NOVO) Elementos do Modal de Recorrência
+        const recurrenceModal = document.getElementById('recurrence-modal');
+        const recurrenceModalBackdrop = document.getElementById('recurrence-modal-backdrop');
+        const recurrenceModalContent = document.getElementById('recurrence-modal-content');
+        const recurrenceModalCloseBtn = document.getElementById('recurrence-modal-close');
+        const recurrenceTabs = document.querySelectorAll('.recurrence-tab');
+        const recurrenceContents = document.querySelectorAll('.recurrence-content');
+        const saveRecurrenceBtn = document.getElementById('save-recurrence-btn');
+        // (NOVO) Inputs do modal de recorrência
+        const recurrenceCheckboxes = document.querySelectorAll('.weekday-checkbox');
+        const recurrenceMonthlyDay = document.getElementById('recurrence-monthly-day');
+        const recurrenceScheduledDays = document.getElementById('recurrence-scheduled-days');
+
 
         // (NOVO) Elementos do Modal de Confirmação
         const confirmDeleteModal = document.getElementById('confirm-delete-modal');
@@ -662,7 +819,10 @@
                 // Ícones de 16x16 (w-4, h-4)
                 'calendar': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>',
                 'alert': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" x2="12" y1="9" y2="13"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>',
+
+                // (MODIFICADO) Ícone de recorrência agora é usado em 2 tamanhos
                 'recurrence': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-sm"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.6v-1.2a4.8 4.8 0 0 1 4.8-4.8h13.4"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.4v1.2a4.8 4.8 0 0 1-4.8 4.8H2.8"/></svg>', // (NOVO)
+                'recurrence-form': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.6v-1.2a4.8 4.8 0 0 1 4.8-4.8h13.4"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.4v1.2a4.8 4.8 0 0 1-4.8 4.8H2.8"/></svg>', // (NOVO) Ícone maior para o botão
 
                 // Ícones de 28x28 (w-7, h-7)
                 'logo': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="svg-icon-lg" stroke="white"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
@@ -693,11 +853,35 @@
             return map[list] || 'Backlog';
         }
 
-        // (NOVO)
+        // (MODIFICADO) Agora lê o objeto de recorrência detalhado
         function getRecurrenceText(recurrence) {
             const type = (recurrence && recurrence.type) || 'none';
-            const map = { daily: 'Diária', weekly: 'Semanal', monthly: 'Mensal', none: 'Nenhuma' };
-            return map[type] || 'Nenhuma';
+
+            switch (type) {
+                case 'none':
+                    return 'Nenhuma';
+                case 'daily':
+                    return 'Diária';
+                case 'weekly':
+                    const weekDaysAbbr = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+                    if (recurrence.days && recurrence.days.length > 0) {
+                        const days = recurrence.days.map(d => weekDaysAbbr[d]).join(', ');
+                        return `Semanal (${days})`;
+                    }
+                    return 'Semanal'; // Fallback
+                case 'monthly':
+                    if (recurrence.day) {
+                        return `Mensal (dia ${recurrence.day})`;
+                    }
+                    return 'Mensal'; // Fallback
+                case 'scheduled':
+                    if (recurrence.every) {
+                        return `A cada ${recurrence.every} dias`;
+                    }
+                    return 'Programada'; // Fallback
+                default:
+                    return 'Nenhuma';
+            }
         }
 
         function getPriorityFromText(text) {
@@ -720,13 +904,15 @@
             return 'backlog';
         }
 
-        // (NOVO)
+        // (NOVO) getRecurrenceFromText (usado para importação)
+        // (NOTA) Esta função permanece simples, importando apenas os tipos básicos.
         function getRecurrenceFromText(text) {
             const lowerText = text ? text.toLowerCase() : '';
-            if (lowerText.includes('diária')) return 'daily';
-            if (lowerText.includes('semanal')) return 'weekly';
-            if (lowerText.includes('mensal')) return 'monthly';
-            return 'none';
+            if (lowerText.includes('diária')) return { type: 'daily' };
+            if (lowerText.includes('semanal')) return { type: 'weekly' }; // Importa como 'semanal' genérico
+            if (lowerText.includes('mensal')) return { type: 'monthly' }; // Importa como 'mensal' genérico
+            // Não suporta importação de "Programada" ou dias específicos por texto.
+            return { type: 'none' };
         }
 
         function escapeAttr(str) {
@@ -922,9 +1108,10 @@
 
             const priorityClasses = getPriorityClasses(priority);
 
-            // (NOVO) Adiciona ícone de recorrência
+            // (MODIFICADO) Ícone de recorrência usa 'recurrence' (ícone pequeno)
+            // (MODIFICADO) Removido 'flex-shrink-0' daqui
             const recurrenceIconHtml = (recurrence && recurrence.type !== 'none') ?
-                `<span class="flex-shrink-0 text-blue-400" title="Tarefa Recorrente: ${getRecurrenceText(recurrence)}">${getIcon('recurrence')}</span>` :
+                `<span class="text-blue-400" title="Recorrente: ${getRecurrenceText(recurrence)}">${getIcon('recurrence')}</span>` :
                 '';
 
             card.innerHTML = `
@@ -943,10 +1130,9 @@
                     >${escapeAttr(text)}</span>
                 </div>
 
-                <!-- (NOVO) Ícone de recorrência adicionado -->
-                ${recurrenceIconHtml}
-                
-                <div class="due-date-container flex-shrink-0 w-[120px] flex justify-end">
+                <!-- (MODIFICADO) Agrupador de Data e Recorrência -->
+                <div class="date-recurrence-group flex-shrink-0 flex items-center justify-end gap-2">
+                    ${recurrenceIconHtml}
                     ${createDueDateInput(dueDate)}
                 </div>
 
@@ -1088,41 +1274,99 @@
             }
         }
 
-        // (NOVO) Calcula a próxima data de vencimento para tarefas recorrentes
+        // (MODIFICADO) Lógica de cálculo da próxima data de vencimento
         function calculateNextDueDate(task) {
             const { dueDate, recurrence } = task;
             const type = (recurrence && recurrence.type) || 'none';
 
+            // Se não houver recorrência ou data base, não faz nada
             if (type === 'none' || !dueDate) {
-                return dueDate; // Retorna a data existente se não houver recorrência ou data base
+                return dueDate;
             }
 
-            // Começa da data de vencimento *atual*
+            // 1. Define a data base para o cálculo
             const dateParts = dueDate.split('-').map(Number);
-            const nextDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
-            nextDate.setHours(12, 0, 0, 0); // Evita problemas de fuso horário
+            const baseDate = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            baseDate.setHours(12, 0, 0, 0); // Evita problemas de fuso
 
-            // Garante que a próxima data seja no futuro (depois de HOJE)
-            const today = TODAY_NORM;
+            const nextDate = new Date(baseDate);
 
+            // 2. Calcula a próxima data com base no tipo
             switch (type) {
                 case 'daily':
-                    do {
-                        nextDate.setDate(nextDate.getDate() + 1);
-                    } while (nextDate <= today);
+                    nextDate.setDate(baseDate.getDate() + 1);
                     break;
+
+                case 'scheduled':
+                    const interval = (recurrence.every && recurrence.every > 0) ? recurrence.every : 1;
+                    nextDate.setDate(baseDate.getDate() + interval);
+                    break;
+
                 case 'weekly':
-                    do {
-                        nextDate.setDate(nextDate.getDate() + 7);
-                    } while (nextDate <= today);
+                    const sortedDays = (recurrence.days || []).map(Number).sort((a, b) => a - b);
+                    if (sortedDays.length === 0) {
+                        // Fallback: se 'weekly' foi salvo sem dias, age como 'daily'
+                        nextDate.setDate(baseDate.getDate() + 1);
+                        break;
+                    }
+
+                    // Encontra o próximo dia válido *depois* da data base
+                    let daysToAdd = 1;
+                    let tempDate = new Date(baseDate);
+                    tempDate.setDate(tempDate.getDate() + daysToAdd);
+
+                    while (!sortedDays.includes(tempDate.getDay())) {
+                        daysToAdd++;
+                        tempDate.setDate(baseDate.getDate() + daysToAdd);
+                        // Limite de segurança para evitar loop infinito
+                        if (daysToAdd > 8) {
+                            // Se algo der errado (ex: sortedDays vazio), avança 7 dias
+                            daysToAdd = 7;
+                            break;
+                        }
+                    }
+                    nextDate.setDate(baseDate.getDate() + daysToAdd);
                     break;
+
                 case 'monthly':
-                    do {
-                        nextDate.setMonth(nextDate.getMonth() + 1);
-                    } while (nextDate <= today);
+                    const targetDay = (recurrence.day && recurrence.day > 0) ? recurrence.day : 1;
+
+                    // Vai para o próximo mês
+                    let nextMonth = baseDate.getMonth() + 1;
+                    let nextYear = baseDate.getFullYear();
+
+                    if (nextMonth === 12) { // se for Dezembro, próximo mês é Janeiro do ano seguinte
+                        nextMonth = 0; // Janeiro (0-indexado)
+                        nextYear += 1;
+                    }
+
+                    // Pega o último dia do *próximo* mês
+                    // new Date(ano, mês + 1, 0) -> último dia do 'mês'
+                    const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+
+                    // Garante que o dia alvo não é maior que o último dia do mês
+                    const finalDay = Math.min(targetDay, daysInNextMonth);
+
+                    nextDate.setFullYear(nextYear, nextMonth, finalDay);
                     break;
+
                 default:
-                    return dueDate; // Tipo desconhecido, não faz nada
+                    // Tipo desconhecido, apenas avança 1 dia para evitar loops
+                    nextDate.setDate(baseDate.getDate() + 1);
+            }
+
+            // 3. Garante que a próxima data seja no futuro (depois de HOJE)
+            // Se a data calculada ainda for hoje ou no passado, recalcula
+            // Isso acontece se a tarefa estiver muito atrasada
+            while (nextDate <= TODAY_NORM) {
+                // (Simulação) Cria uma "pseudo-tarefa" com a nova data para recalcular
+                const newPseudoTask = {
+                    ...task,
+                    dueDate: nextDate.toISOString().split('T')[0]
+                };
+                const nextDueDateStr = calculateNextDueDate(newPseudoTask);
+                const [y, m, d] = nextDueDateStr.split('-').map(Number);
+                nextDate.setFullYear(y, m - 1, d);
             }
 
             // Formata de volta para YYYY-MM-DD
@@ -1157,18 +1401,25 @@
             }
         }
 
-
+        // (MODIFICADO)
         function handleAddTask(e) {
             e.preventDefault();
             const listType = e.submitter.dataset.list;
             const text = taskTextInput.value.trim();
             const priority = taskPriorityInput.value;
-            const recurrenceType = taskRecurrenceInput.value; // (NOVO)
+            const recurrence = currentRecurrenceData; // (MODIFICADO) Pega do estado global
             const dueDate = taskDueDateInput.value || null;
 
             if (!text) {
                 taskTextInput.focus();
                 showToast("Por favor, insira a descrição da demanda.", "info");
+                return;
+            }
+
+            // (NOVO) Se for recorrente, precisa de uma data de vencimento
+            if (recurrence.type !== 'none' && !dueDate) {
+                taskDueDateInput.focus();
+                showToast("Tarefas recorrentes precisam de uma Data de Vencimento inicial.", "info");
                 return;
             }
 
@@ -1181,7 +1432,7 @@
                 list: listType,
                 dueDate: dueDate,
                 notes: "",
-                recurrence: { type: recurrenceType }, // (MODIFICADO)
+                recurrence: recurrence, // (MODIFICADO) Salva o objeto de recorrência
                 createdAt: now,
                 order: now
             };
@@ -1190,10 +1441,15 @@
             saveTasks();
             renderTasks();
 
+            // Reseta o formulário
             taskTextInput.value = '';
             taskPriorityInput.value = 'media';
-            taskRecurrenceInput.value = 'none'; // (NOVO)
+            // (MODIFICADO) Reseta o input de data para 'text'
+            taskDueDateInput.type = 'text';
             taskDueDateInput.value = '';
+            // (NOVO) Reseta o estado global de recorrência e o texto do botão
+            currentRecurrenceData = { type: 'none' };
+            updateRecurrenceButtonText();
         }
 
         function updateTask(id, updates) {
@@ -1275,12 +1531,17 @@
 
         // --- Funções do Modal de Notas ---
 
+        // (MODIFICADO)
         function openNotesModal(task) {
-            notesModalTaskId.value = task.id;
-            notesModalTaskText.value = task.text; // (MODIFICADO) Usa .value para input
-            notesModalTextarea.value = task.notes || "";
-            notesModalPriority.value = task.priority || "media"; // (NOVO) Define a prioridade atual
-            notesModalRecurrence.value = (task.recurrence && task.recurrence.type) || "none"; // (NOVO) Define a recorrência
+            taskBeingEdited = JSON.parse(JSON.stringify(task)); // (MODIFICADO) Clona a tarefa para edição
+
+            notesModalTaskId.value = taskBeingEdited.id;
+            notesModalTaskText.value = taskBeingEdited.text; // (MODIFICADO) Usa .value para input
+            notesModalTextarea.value = taskBeingEdited.notes || "";
+            notesModalPriority.value = taskBeingEdited.priority || "media"; // (NOVO) Define a prioridade atual
+
+            // (MODIFICADO) Atualiza o texto do botão de recorrência
+            updateNotesModalRecurrenceButton();
 
             notesModal.classList.remove('hidden');
             notesModalBackdrop.style.display = 'block';
@@ -1314,12 +1575,16 @@
                 notesModalContent.style.display = 'none';
                 notesModalContent.classList.remove('modal-content-leave-active');
                 notesModalContent.classList.add('modal-content-enter'); // Reseta para a próxima abertura
-                // Limpa os campos
+
+                // (MODIFICADO) Limpa os campos
                 notesModalTaskId.value = "";
-                notesModalTaskText.value = ""; // (MODIFICADO) Usa .value para input
+                notesModalTaskText.value = "";
                 notesModalTextarea.value = "";
-                notesModalPriority.value = "media"; // (NOVO) Reseta a prioridade
-                notesModalRecurrence.value = "none"; // (NOVO) Reseta a recorrência
+                notesModalPriority.value = "media";
+
+                // (NOVO) Reseta o estado de edição
+                taskBeingEdited = null;
+                recurrenceModalSource = 'main-form'; // Garante que o modal de recorrência volte ao padrão
             }, 150);
         }
 
@@ -1330,7 +1595,6 @@
             const newText = notesModalTaskText.value.trim();
             const newNotes = notesModalTextarea.value;
             const newPriority = notesModalPriority.value; // (NOVO) Pega a nova prioridade
-            const newRecurrenceType = notesModalRecurrence.value; // (NOVO) Pega a nova recorrência
 
             if (!newText) {
                 showToast("A demanda não pode ficar em branco.", "error");
@@ -1338,17 +1602,221 @@
                 return;
             }
 
+            // (MODIFICADO) Pega a tarefa ATUAL
+            if (!taskBeingEdited || taskBeingEdited.id !== taskId) {
+                console.error("Erro: Tarefa em edição não encontrada ou ID não confere.");
+                showToast("Erro ao salvar a demanda.", "error");
+                return;
+            }
+
+            // (MODIFICADO) Pega a recorrência do objeto em memória (que foi atualizado pelo outro modal)
+            const newRecurrence = taskBeingEdited.recurrence;
+
             if (taskId) {
                 updateTask(taskId, {
                     text: newText,
                     notes: newNotes,
                     priority: newPriority,
-                    recurrence: { type: newRecurrenceType } // (MODIFICADO) Salva a recorrência
+                    recurrence: newRecurrence // (MODIFICADO) Salva a recorrência
                 });
                 showToast("Demanda salva com sucesso!", "success");
             }
             closeNotesModal();
         }
+
+        // --- (NOVO) Funções do Modal de Recorrência ---
+
+        // (NOVO) Atualiza o texto do botão de recorrência no formulário (Criação)
+        function updateRecurrenceButtonText() {
+            const text = getRecurrenceText(currentRecurrenceData);
+            if (text === 'Nenhuma') {
+                formRecurrenceText.textContent = 'Recorrência';
+            } else {
+                formRecurrenceText.textContent = `Rec: ${text}`;
+            }
+        }
+
+        // (NOVO) Atualiza o texto do botão de recorrência no modal (Edição)
+        function updateNotesModalRecurrenceButton() {
+            if (!taskBeingEdited) return;
+            const recurrence = taskBeingEdited.recurrence || { type: 'none' };
+            const text = getRecurrenceText(recurrence);
+            const buttonText = document.getElementById('notes-modal-recurrence-text');
+            if (buttonText) {
+                buttonText.textContent = (text === 'Nenhuma') ? 'Definir Recorrência' : text;
+            }
+        }
+
+
+        // (MODIFICADO) Abre o modal de recorrência e POPULA com dados
+        function openRecurrenceModal() {
+            // (MODIFICADO) Esta função agora POPULA o modal com base em 'currentRecurrenceData'
+            // que foi definido por quem a chamou (seja 'open-recurrence-btn' ou 'notes-modal-open-recurrence-btn')
+            const data = currentRecurrenceData; // Pega o estado global
+            const currentType = data.type || 'none';
+
+            // Reseta todos os inputs
+            recurrenceCheckboxes.forEach(cb => cb.checked = false);
+            recurrenceMonthlyDay.value = 1;
+            recurrenceScheduledDays.value = 5;
+
+            // Ativa a aba correta
+            recurrenceTabs.forEach(tab => {
+                const isActive = tab.dataset.tab === currentType;
+                tab.dataset.active = isActive;
+            });
+            recurrenceContents.forEach(content => {
+                const isActive = content.id === `recurrence-content-${currentType}`;
+                content.dataset.active = isActive;
+            });
+
+            // Popula os inputs com os dados salvos
+            if (currentType === 'weekly' && data.days) {
+                recurrenceCheckboxes.forEach(cb => {
+                    if (data.days.includes(Number(cb.dataset.day))) {
+                        cb.checked = true;
+                    }
+                });
+            } else if (currentType === 'monthly' && data.day) {
+                recurrenceMonthlyDay.value = data.day;
+            } else if (currentType === 'scheduled' && data.every) {
+                recurrenceScheduledDays.value = data.every;
+            }
+
+            // Abre o modal
+            recurrenceModal.classList.remove('hidden');
+            recurrenceModalBackdrop.style.display = 'block';
+            recurrenceModalContent.style.display = 'block';
+
+            void recurrenceModalContent.offsetWidth; // Força repaint
+
+            recurrenceModalBackdrop.classList.add('opacity-100');
+            recurrenceModalContent.classList.add('modal-content-enter-active');
+            recurrenceModalContent.classList.remove('modal-content-enter');
+        }
+
+        // (NOVO) Função chamada pelo botão de edição para preparar e abrir o modal
+        function openEditRecurrenceModal() {
+            if (!taskBeingEdited) return;
+
+            // 1. Carrega os dados da tarefa EM EDIÇÃO para o 'staging area' (currentRecurrenceData)
+            // Usamos JSON.parse/stringify para clonar o objeto e não modificar o original por acidente
+            currentRecurrenceData = JSON.parse(JSON.stringify(taskBeingEdited.recurrence || { type: 'none' }));
+
+            // 2. Define quem abriu o modal
+            recurrenceModalSource = 'edit-modal';
+
+            // 3. Abre o modal (que agora lerá os dados de 'currentRecurrenceData')
+            openRecurrenceModal();
+        }
+
+        // (NOVO) Fecha o modal de recorrência
+        function closeRecurrenceModal() {
+            recurrenceModalBackdrop.classList.remove('opacity-100');
+            recurrenceModalContent.classList.remove('modal-content-enter-active');
+            recurrenceModalContent.classList.add('modal-content-leave-active');
+
+            setTimeout(() => {
+                recurrenceModal.classList.add('hidden');
+                recurrenceModalBackdrop.style.display = 'none';
+                recurrenceModalContent.style.display = 'none';
+                recurrenceModalContent.classList.remove('modal-content-leave-active');
+                recurrenceModalContent.classList.add('modal-content-enter'); // Reseta
+            }, 150);
+        }
+
+        // (NOVO) Lógica para trocar as abas do modal
+        function initRecurrenceModalTabs() {
+            recurrenceTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabType = tab.dataset.tab;
+
+                    // Atualiza abas
+                    recurrenceTabs.forEach(t => t.dataset.active = (t === tab));
+
+                    // Atualiza conteúdo
+                    recurrenceContents.forEach(content => {
+                        content.dataset.active = (content.id === `recurrence-content-${tabType}`);
+                    });
+                });
+            });
+        }
+
+        // (MODIFICADO) Salva a recorrência com dados detalhados
+        function handleSaveRecurrence() {
+            const source = recurrenceModalSource; // Captura quem abriu o modal
+
+            const activeTab = document.querySelector('.recurrence-tab[data-active="true"]');
+            const type = activeTab ? activeTab.dataset.tab : 'none';
+
+            let newData = { type: 'none' };
+
+            try {
+                switch (type) {
+                    case 'none':
+                        newData = { type: 'none' };
+                        break;
+
+                    case 'daily':
+                        newData = { type: 'daily' };
+                        break;
+
+                    case 'weekly':
+                        const selectedDays = [];
+                        recurrenceCheckboxes.forEach(cb => {
+                            if (cb.checked) {
+                                selectedDays.push(Number(cb.dataset.day));
+                            }
+                        });
+                        if (selectedDays.length === 0) {
+                            showToast("Por favor, selecione ao menos um dia da semana.", "info");
+                            return; // Não fecha o modal
+                        }
+                        newData = { type: 'weekly', days: selectedDays.sort((a, b) => a - b) };
+                        break;
+
+                    case 'monthly':
+                        const day = recurrenceMonthlyDay.valueAsNumber;
+                        if (!day || day < 1 || day > 31) {
+                            showToast("Por favor, insira um dia do mês válido (1-31).", "info");
+                            recurrenceMonthlyDay.focus();
+                            return; // Não fecha o modal
+                        }
+                        newData = { type: 'monthly', day: day };
+                        break;
+
+                    case 'scheduled':
+                        const every = recurrenceScheduledDays.valueAsNumber;
+                        if (!every || every < 1) {
+                            showToast("Por favor, insira um intervalo de dias válido.", "info");
+                            recurrenceScheduledDays.focus();
+                            return; // Não fecha o modal
+                        }
+                        newData = { type: 'scheduled', every: every };
+                        break;
+                }
+
+            } catch (error) {
+                console.error("Erro ao salvar recorrência:", error);
+                showToast("Ocorreu um erro ao salvar.", "error");
+                return;
+            }
+
+            // (MODIFICADO) Direciona o save para o lugar certo
+            if (source === 'edit-modal' && taskBeingEdited) {
+                // Se foi aberto pelo modal de EDIÇÃO
+                taskBeingEdited.recurrence = newData; // Atualiza o objeto em memória
+                updateNotesModalRecurrenceButton(); // Atualiza o botão do modal de EDIÇÃO
+            } else {
+                // Comportamento padrão: aberto pelo formulário PRINCIPAL
+                currentRecurrenceData = newData; // Salva no estado global do formulário
+                updateRecurrenceButtonText(); // Atualiza o botão do formulário PRINCIPAL
+            }
+
+            recurrenceModalSource = 'main-form'; // Reseta a fonte para o padrão
+            closeRecurrenceModal(); // Fecha o modal
+        }
+
 
         // --- (NOVO) Funções do Modal de Confirmação ---
 
@@ -1452,7 +1920,7 @@
                         // A tarefa só é recorrente SE tiver um tipo E uma data de vencimento
                         if (recurrenceType !== 'none' && task.dueDate) {
                             // É uma tarefa recorrente
-                            const nextDueDate = calculateNextDueDate(task);
+                            const nextDueDate = calculateNextDueDate(task); // (MODIFICADO) Usa a nova lógica
                             updateTask(task.id, {
                                 list: 'backlog', // Mover de volta para o backlog
                                 dueDate: nextDueDate,
@@ -1550,13 +2018,13 @@
                     lista: getListText(task.list), // (NOVO)
                     demanda: task.text,
                     prioridade: getPriorityText(task.priority),
-                    recorrência: getRecurrenceText(task.recurrence),
+                    recorrência: getRecurrenceText(task.recurrence), // (MODIFICADO) Usa a nova função
                     vencimento: task.dueDate || '',
                     notas: task.notes || ''
                 }));
                 const ws = XLSX.utils.json_to_sheet(dataToExport);
                 ws['!cols'] = [
-                    { wch: 15 }, { wch: 12 }, { wch: 60 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 40 } // (MODIFICADO)
+                    { wch: 15 }, { wch: 12 }, { wch: 60 }, { wch: 15 }, { wch: 25 }, { wch: 12 }, { wch: 40 } // (MODIFICADO) Col de recorrência
                 ];
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, 'TESTE');
@@ -1654,7 +2122,7 @@
 
                         const status = getStatusFromText(statusRaw);
                         const prioridade = getPriorityFromText(prioridadeRaw);
-                        const recorrencia = getRecurrenceFromText(recorrenciaRaw); // (NOVO)
+                        const recorrencia = getRecurrenceFromText(recorrenciaRaw); // (MODIFICADO) Usa a nova função
                         const notas = (notasRaw || "").trim();
 
                         // (NOVO) Determina a lista
@@ -1673,7 +2141,7 @@
                             list: listaFinal, // (MODIFICADO)
                             dueDate: vencimento,
                             notes: notas,
-                            recurrence: { type: recorrencia }, // (NOVO)
+                            recurrence: recorrencia, // (MODIFICADO) Salva o objeto
                             createdAt: now + index,
                             order: now + index
                         });
@@ -1792,7 +2260,7 @@
 
         // --- Inicialização da Aplicação ---
         function initApp() {
-            console.log("Iniciando FocoFlow v2.1 (Import/Export de Lista)...");
+            console.log("Iniciando FocoFlow v2.3 (Modal de Edição de Recorrência)...");
 
             // Listeners Globais
             addTaskForm.addEventListener('submit', handleAddTask);
@@ -1800,6 +2268,13 @@
             exportButton.addEventListener('click', handleExport);
             importInput.addEventListener('change', handleImport);
             toggleFormButton.addEventListener('click', toggleAddTaskForm);
+
+            // (MODIFICADO) O botão do form principal agora passa sua "fonte"
+            openRecurrenceBtn.addEventListener('click', () => {
+                recurrenceModalSource = 'main-form'; // Define a fonte
+                // 'currentRecurrenceData' já está com os dados do form
+                openRecurrenceModal(); // Abre o modal
+            });
 
             // Listeners das Listas (delegação)
             focusList.addEventListener('click', handleListClick);
@@ -1814,6 +2289,14 @@
             notesModalCloseBtn.addEventListener('click', closeNotesModal);
             notesModalBackdrop.addEventListener('click', closeNotesModal);
             notesModalForm.addEventListener('submit', handleSaveNotes);
+            // (NOVO) Listener para o novo botão de recorrência no modal de edição
+            notesModalOpenRecurrenceBtn.addEventListener('click', openEditRecurrenceModal);
+
+            // (NOVO) Listeners do Modal de Recorrência
+            recurrenceModalCloseBtn.addEventListener('click', closeRecurrenceModal);
+            recurrenceModalBackdrop.addEventListener('click', closeRecurrenceModal);
+            saveRecurrenceBtn.addEventListener('click', handleSaveRecurrence);
+            initRecurrenceModalTabs();
 
             // (NOVO) Listeners do Modal de Confirmação
             confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
@@ -1844,6 +2327,12 @@
             document.getElementById('completed-title-icon-placeholder').innerHTML = getIcon('titleCompleted');
             document.getElementById('completed-arrow-icon-placeholder').innerHTML = getIcon('chevronDown');
             document.getElementById('modal-close-icon-placeholder').innerHTML = getIcon('close');
+
+            // (NOVO) Ícones do novo modal e botão
+            document.getElementById('form-recurrence-icon-placeholder').innerHTML = getIcon('recurrence-form');
+            document.getElementById('recurrence-modal-close-icon-placeholder').innerHTML = getIcon('close');
+            // (NOVO) Ícone do botão de recorrência no modal de edição
+            document.getElementById('notes-modal-recurrence-icon-placeholder').innerHTML = getIcon('recurrence-form');
 
             // (NOVO) Ícones da Lixeira e Modal de Confirmação
             document.getElementById('deleted-title-icon-placeholder').innerHTML = getIcon('titleDeleted');
